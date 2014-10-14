@@ -139,6 +139,12 @@ else
 HOST_GCC_COMMON_CONF_OPT += --disable-libmudflap
 endif
 
+ifeq ($(BR2_GCC_ENABLE_LIBATOMIC),y)
+HOST_GCC_COMMON_CONF_OPT += --enable-libatomic
+else
+HOST_GCC_COMMON_CONF_OPT += --disable-libatomic
+endif
+
 ifeq ($(BR2_PTHREADS_NONE),y)
 HOST_GCC_COMMON_CONF_OPT += \
 	--disable-threads \
