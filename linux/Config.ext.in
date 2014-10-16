@@ -42,4 +42,11 @@ config BR2_LINUX_KERNEL_EXT_RTAI_PATCH
 	help
 	  Optionally, explicitly specify the RTAI patch to use.
 
+# AUFS
+config BR2_LINUX_KERNEL_EXT_AUFS
+	bool "AUFS Filesystem"
+	select BR2_PACKAGE_AUFS
+	help
+	  AUFS Filesystem Support
+
 endmenu
