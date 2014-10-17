@@ -18,9 +18,11 @@ define AUFS_PREPARE_KERNEL_FILES
 	cp -r $(AUFS_DIR)/fs $(LINUX_DIR) ; \
 	cp -r $(AUFS_DIR)/include/uapi/linux/aufs_type.h \
 		$(LINUX_DIR)/include/uapi/linux/
+	echo "header-y += aufs_type.h" >> \
+		$(LINUX_DIR)/include/uapi/linux/Kbuild
 endef
 
 LINUX_POST_EXTRACT_HOOKS += AUFS_PREPARE_KERNEL_FILES
 LINUX_PRE_PATCH_HOOKS += AUFS_PREPARE_KERNEL_PATCHES
 
-endif #BR2_LINUX_EXT_AUFS
+endif #BR2_LINUX_KERNEL_EXT_AUFS
