@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BASH_VERSION = 4.3
+BASH_VERSION = 4.3.30
 BASH_SITE = $(BR2_GNU_MIRROR)/bash
 BASH_DEPENDENCIES = ncurses readline host-bison
 BASH_CONF_OPT = --with-installed-readline
