@@ -1,0 +1,23 @@
+scripts/vtund.rc.debian: [[:space:]] is correct, [:space:] is not.
+
+[:space:] describes a character class in extended regex and is only
+valid inside a bracket exprenssion, according to POSIX.1-2001.
+
+Some egrep implementations allow character classes outside of
+brackets for backwards compatibility, but others will complain
+about this and fail.
+
+Signed-off-by: Albert Lee <trisk@omniti.com>
+
+diff -urN vtun-3.0.3.orig/scripts/vtund.rc.debian vtun-3.0.3/scripts/vtund.rc.debian
+--- vtun-3.0.3.orig/scripts/vtund.rc.debian	2007-03-31 19:02:59.000000000 -0400
++++ vtun-3.0.3/scripts/vtund.rc.debian	2014-11-19 12:23:34.766216135 -0500
+@@ -13,7 +13,7 @@
+ case "$1" in 
+        start)
+       # find all the defined tunnels
+-      egrep -v '^[:space:]*(#.*)?$' $CONFFILE | while true;
++      egrep -v '^[[:space:]]*(#.*)?$' $CONFFILE | while true;
+       do
+           read i
+           # no more lines available? done, then.
