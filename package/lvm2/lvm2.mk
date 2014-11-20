@@ -43,4 +43,11 @@ else
 LVM2_CONF_OPT += --disable-applib
 endif
 
+HOST_LVM2_CONF_OPT += \
+	--with-confdir=$(HOST_DIR)/etc \
+	--with-default-system-dir=$(HOST_DIR)/etc/lvm
+
+HOST_LVM2_DEPENDENCIES =
+
 $(eval $(autotools-package))
+$(eval $(host-autotools-package))
