@@ -59,6 +59,24 @@ LINUX_FIRMWARE_FILES += rtlwifi/rtl8821aefw.bin \
 LINUX_FIRMWARE_ALL_LICENSE_FILES += LICENCE.rtlwifi_firmware.txt
 endif
 
+# ar6002
+ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_6002),y)
+LINUX_FIRMWARE_FILES += ath6k/AR6002
+LINUX_FIRMWARE_ALL_LICENSE_FILES += LICENCE.atheros_firmware
+endif
+
+# ar6003
+ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_6003),y)
+LINUX_FIRMWARE_FILES += ath6k/AR6003
+LINUX_FIRMWARE_ALL_LICENSE_FILES += LICENCE.atheros_firmware
+endif
+
+# ar6004
+ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_6004),y)
+LINUX_FIRMWARE_FILES += ath6k/AR6004
+LINUX_FIRMWARE_ALL_LICENSE_FILES += LICENCE.atheros_firmware
+endif
+
 # ar7010
 ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_ATHEROS_7010),y)
 LINUX_FIRMWARE_FILES += ar7010.fw ar7010_1_1.fw htc_7010.fw
@@ -201,6 +219,25 @@ ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_CXGB4_T5),y)
 # cxgb4/t5fw.bin is a symlink to cxgb4/t5fw-1.11.27.0.bin
 LINUX_FIRMWARE_FILES += cxgb4/t5fw-1.11.27.0.bin cxgb4/t5fw.bin
 LINUX_FIRMWARE_ALL_LICENSE_FILES += LICENCE.chelsio_firmware
+endif
+
+ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_RTL_8169),y)
+LINUX_FIRMWARE_FILES += \
+	rtl_nic/rtl8168d-1.fw \
+	rtl_nic/rtl8168d-2.fw \
+	rtl_nic/rtl8168e-1.fw \
+	rtl_nic/rtl8168e-2.fw \
+	rtl_nic/rtl8168e-3.fw \
+	rtl_nic/rtl8168f-1.fw \
+	rtl_nic/rtl8168f-2.fw \
+	rtl_nic/rtl8105e-1.fw \
+	rtl_nic/rtl8402-1.fw \
+	rtl_nic/rtl8411-1.fw \
+	rtl_nic/rtl8411-2.fw \
+	rtl_nic/rtl8106e-1.fw \
+	rtl_nic/rtl8106e-2.fw \
+	rtl_nic/rtl8168g-2.fw \
+	rtl_nic/rtl8168g-3.fw
 endif
 
 ifeq ($(BR2_PACKAGE_LINUX_FIRMWARE_XCx000),y)
