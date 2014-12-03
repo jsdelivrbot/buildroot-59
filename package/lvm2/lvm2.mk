@@ -43,7 +43,7 @@ else
 LVM2_CONF_OPTS += --disable-applib
 endif
 
-HOST_LVM2_CONF_OPT += \
+HOST_LVM2_CONF_OPTS += \
 	--with-confdir=$(HOST_DIR)/etc \
 	--with-default-system-dir=$(HOST_DIR)/etc/lvm
 
