@@ -139,6 +139,10 @@ ifeq ($(BR2_INSTALL_OBJC),y)
 HOST_GCC_FINAL_USR_LIBS += libobjc
 endif
 
+ifeq ($(BR2_GCC_ENABLE_LIBATOMIC),y)
+HOST_GCC_FINAL_USR_LIBS += libatomic
+endif
+
 ifeq ($(BR2_GCC_ENABLE_LIBMUDFLAP),y)
 ifeq ($(BR2_TOOLCHAIN_HAS_THREADS),y)
 HOST_GCC_FINAL_USR_LIBS += libmudflapth
