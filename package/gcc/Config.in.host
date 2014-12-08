@@ -167,6 +167,12 @@ config BR2_GCC_ENABLE_LIBMUDFLAP
 
 	  If you're unsure, leave this option disabled.
 
+config BR2_GCC_ENABLE_LIBATOMIC
+	bool "Enable libatomic support"
+	depends on BR2_PTHREADS_NATIVE || BR2_TOOLCHAIN_BUILDROOT_EGLIBC || BR2_TOOLCHAIN_BUILDROOT_GLIBC
+	help
+	  Enable GCC's libatomic atomic functions library
+
 config BR2_GCC_ENABLE_GRAPHITE
 	bool "Enable graphite support"
 	depends on BR2_GCC_SUPPORTS_GRAPHITE
