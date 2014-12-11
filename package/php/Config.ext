@@ -56,6 +56,11 @@ config BR2_PACKAGE_PHP_EXT_HASH
 	help
 	  HASH message digest framework
 
+config BR2_PACKAGE_PHP_EXT_MCRYPT
+	bool "mcrypt"
+	help
+	  mcrypt support
+
 config BR2_PACKAGE_PHP_EXT_OPENSSL
 	bool "openssl"
 	select BR2_PACKAGE_OPENSSL
@@ -187,12 +192,25 @@ comment "intl support needs a toolchain w/ C++, wchar, threads"
 	depends on BR2_ARCH_HAS_ATOMICS
 	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_USE_WCHAR || !BR2_TOOLCHAIN_HAS_THREADS
 
+config BR2_PACKAGE_PHP_EXT_MBSTRING
+	bool "mbstring"
+	help
+	  multibyte string support
+
 comment "Image processing"
 
 config BR2_PACKAGE_PHP_EXT_EXIF
 	bool "EXIF"
 	help
 	  EXIF support
+
+config BR2_PACKAGE_PHP_EXT_GD
+	bool "GD"
+	select BR2_PACKAGE_FREETYPE
+	select BR2_PACKAGE_JPEG
+	select BR2_PACKAGE_LIBPNG
+	help
+	  GD support
 
 comment "Mathematical extensions"
 
