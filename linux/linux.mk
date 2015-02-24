@@ -82,6 +82,9 @@ KERNEL_DTBS = $(addsuffix .dtb,$(KERNEL_DTS_NAME))
 ifeq ($(BR2_LINUX_KERNEL_IMAGE_TARGET_CUSTOM),y)
 LINUX_IMAGE_NAME = $(call qstrip,$(BR2_LINUX_KERNEL_IMAGE_NAME))
 LINUX_TARGET_NAME = $(call qstrip,$(BR2_LINUX_KERNEL_IMAGE_TARGET_NAME))
+ifeq ($(LINUX_IMAGE_NAME),)
+LINUX_IMAGE_NAME = $(LINUX_TARGET_NAME)
+endif
 else
 ifeq ($(BR2_LINUX_KERNEL_UIMAGE),y)
 LINUX_IMAGE_NAME = uImage
@@ -106,11 +109,10 @@ LINUX_IMAGE_NAME = vmlinux
 else ifeq ($(BR2_LINUX_KERNEL_VMLINUZ),y)
 LINUX_IMAGE_NAME = vmlinuz
 endif
+# The if-else blocks above are all the image types we know of, and all
+# come from a Kconfig choice, so we know we have LINUX_IMAGE_NAME set
+# to something
 LINUX_TARGET_NAME = $(LINUX_IMAGE_NAME)
-endif
-
-ifeq ($(LINUX_IMAGE_NAME),)
-LINUX_IMAGE_NAME = $(LINUX_TARGET_NAME)
 endif
 
 LINUX_KERNEL_UIMAGE_LOADADDR = $(call qstrip,$(BR2_LINUX_KERNEL_UIMAGE_LOADADDR))
@@ -145,15 +147,15 @@ endif # BR2_LINUX_KERNEL_VMLINUX
 define LINUX_DOWNLOAD_PATCHES
 	$(if $(LINUX_PATCHES),
 		@$(call MESSAGE,"Download additional patches"))
-	$(foreach patch,$(filter ftp://% http://%,$(LINUX_PATCHES)),\
-		$(call DOWNLOAD,$(patch))$(sep))
+	$(foreach patch,$(filter ftp://% http://% https://%,$(LINUX_PATCHES)),\
+		$(call DOWNLOAD_WGET,$(patch),$(notdir $(patch)))$(sep))
 endef
 
 LINUX_POST_DOWNLOAD_HOOKS += LINUX_DOWNLOAD_PATCHES
 
 define LINUX_APPLY_PATCHES
 	for p in $(LINUX_PATCHES) ; do \
-		if echo $$p | grep -q -E "^ftp://|^http://" ; then \
+		if echo $$p | grep -q -E "^ftp://|^http://|^https://" ; then \
 			$(APPLY_PATCHES) $(@D) $(DL_DIR) `basename $$p` ; \
 		elif test -d $$p ; then \
 			$(APPLY_PATCHES) $(@D) $$p linux-\*.patch ; \
@@ -210,6 +212,14 @@ define LINUX_CONFIGURE_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_SECURITY,$(@D)/.config)
 		$(call KCONFIG_ENABLE_OPT,CONFIG_SECURITY_SMACK,$(@D)/.config)
 		$(call KCONFIG_ENABLE_OPT,CONFIG_SECURITY_NETWORK,$(@D)/.config))
+	$(if $(BR2_PACKAGE_IPTABLES),
+		$(call KCONFIG_ENABLE_OPT,CONFIG_IP_NF_IPTABLES,$(@D)/.config)
+		$(call KCONFIG_ENABLE_OPT,CONFIG_IP_NF_FILTER,$(@D)/.config)
+		$(call KCONFIG_ENABLE_OPT,CONFIG_NETFILTER,$(@D)/.config)
+		$(call KCONFIG_ENABLE_OPT,CONFIG_NETFILTER_XTABLES,$(@D)/.config))
+	$(if $(BR2_PACKAGE_XTABLES_ADDONS),
+		$(call KCONFIG_ENABLE_OPT,CONFIG_NF_CONNTRACK,$(@D)/.config)
+		$(call KCONFIG_ENABLE_OPT,CONFIG_NF_CONNTRACK_MARK,$(@D)/.config))
 	$(if $(BR2_LINUX_KERNEL_APPENDED_DTB),
 		$(call KCONFIG_ENABLE_OPT,CONFIG_ARM_APPENDED_DTB,$(@D)/.config))
 	yes '' | $(TARGET_MAKE_ENV) $(MAKE1) $(LINUX_MAKE_FLAGS) -C $(@D) oldconfig
