@@ -6,7 +6,7 @@
 
 WINE_VERSION = 1.6.2
 WINE_SOURCE = wine-$(WINE_VERSION).tar.bz2
-WINE_SITE = http://downloads.sourceforge.net/project/wine/Source/
+WINE_SITE = http://downloads.sourceforge.net/project/wine/Source
 WINE_LICENSE = LGPLv2.1+
 WINE_LICENSE_FILES = COPYING.LIB LICENSE
 WINE_DEPENDENCIES = host-bison host-flex host-wine
@@ -16,7 +16,21 @@ WINE_CONF_OPTS = \
 	--with-wine-tools=../host-wine-$(WINE_VERSION) \
 	--disable-tests \
 	--disable-win64 \
-	--without-opengl
+	--without-capi \
+	--without-coreaudio \
+	--without-gettext \
+	--without-gettextpo \
+	--without-gphoto \
+	--without-gsm \
+	--without-hal \
+	--without-netapi \
+	--without-openal \
+	--without-opencl \
+	--without-opengl \
+	--without-osmesa \
+	--without-oss \
+	--without-xshape \
+	--without-xshm
 
 # Wine uses a wrapper around gcc, and uses the value of --host to
 # construct the filename of the gcc to call.  But for external
@@ -27,6 +41,13 @@ WINE_CONF_OPTS = \
 # the external toolchain, not the one we compute in GNU_TARGET_NAME.
 ifeq ($(BR2_TOOLCHAIN_EXTERNAL),y)
 WINE_CONF_OPTS += TARGETFLAGS="-b $(call qstrip,$(BR2_TOOLCHAIN_EXTERNAL_PREFIX))"
+endif
+
+ifeq ($(BR2_PACKAGE_ALSA_LIB)$(BR2_PACKAGE_ALSA_LIB_SEQ),yy)
+WINE_CONF_OPTS += --with-alsa
+WINE_DEPENDENCIES += alsa-lib
+else
+WINE_CONF_OPTS += --without-alsa
 endif
 
 ifeq ($(BR2_PACKAGE_CUPS),y)
@@ -136,6 +157,13 @@ WINE_CONF_OPTS += --with-curses
 WINE_DEPENDENCIES += ncurses
 else
 WINE_CONF_OPTS += --without-curses
+endif
+
+ifeq ($(BR2_PACKAGE_OPENLDAP),y)
+WINE_CONF_OPTS += --with-ldap
+WINE_DEPENDENCIES += openldap
+else
+WINE_CONF_OPTS += --without-ldap
 endif
 
 ifeq ($(BR2_PACKAGE_SANE_BACKENDS),y)
