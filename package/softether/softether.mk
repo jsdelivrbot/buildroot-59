@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-SOFTETHER_VERSION = 16b713b98da8dba29f0f845d5a8c36d6f7c34824
+SOFTETHER_VERSION = 64fd19e6f849247e3daee765ad278c6bf072afcb
 SOFTETHER_SITE = $(call github,SoftEtherVPN,SoftEtherVPN,$(SOFTETHER_VERSION))
 SOFTETHER_PATCH = \
 	https://github.com/dajhorn/SoftEtherVPN/commit/c5e5d7e93c6f3302adf5821c29c4efdb7630e418.patch \
@@ -27,12 +27,6 @@ endif
 SOFTETHER_CONF_OPTS = \
 	--with-openssl="$(STAGING_DIR)/usr" \
 	--with-zlib="$(STAGING_DIR)/usr"
-
-# softether uses clock_gettime but forgets to link against -lrt
-# breaking the build against older libc's that don't provide this
-# symbol in libc
-SOFTETHER_CONF_ENV += LIBS+=" -lrt"
-HOST_SOFTETHER_CONF_ENV += LIBS+=" -lrt"
 
 # host-libiconv does not exist, therefore we need this extra line
 HOST_SOFTETHER_DEPENDENCIES = host-pkgconf host-openssl host-readline
