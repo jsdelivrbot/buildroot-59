@@ -11,6 +11,8 @@ MPLAYER_SITE = http://www.mplayerhq.hu/MPlayer/releases
 MPLAYER_CFLAGS = $(TARGET_CFLAGS)
 MPLAYER_LDFLAGS = $(TARGET_LDFLAGS)
 
+MPLAYER_DEPENDENCIES += host-pkgconf
+
 # mplayer needs pcm+mixer support, but configure fails to check for it
 ifeq ($(BR2_PACKAGE_ALSA_LIB)$(BR2_PACKAGE_ALSA_LIB_MIXER)$(BR2_PACKAGE_ALSA_LIB_PCM),yyy)
 MPLAYER_DEPENDENCIES += alsa-lib
@@ -96,6 +98,13 @@ MPLAYER_CFLAGS += \
 MPLAYER_LDFLAGS += $(addprefix -l,$(MPLAYER_LIVE555)) -lstdc++
 else
 MPLAYER_CONF_OPTS += --disable-live
+endif
+
+ifeq ($(BR2_PACKAGE_GIFLIB),y)
+MPLAYER_DEPENDENCIES += giflib
+MPLAYER_CONF_OPTS += --enable-gif
+else
+MPLAYER_CONF_OPTS += --disable-gif
 endif
 
 MPLAYER_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBTHEORA),libtheora)
