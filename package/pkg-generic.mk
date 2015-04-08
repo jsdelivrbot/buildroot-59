@@ -546,6 +546,11 @@ $$($(2)_TARGET_EXTRACT):	$$($(2)_TARGET_SOURCE)
 $(1)-depends:		$$($(2)_FINAL_DEPENDENCIES)
 
 $(1)-source:		$$($(2)_TARGET_SOURCE)
+
+$(1)-external-deps:
+	@for p in $$($(2)_SOURCE) $$($(2)_PATCH) $$($(2)_EXTRA_DOWNLOADS) ; do \
+		echo `basename $$$$p` ; \
+	done
 else
 # In the package override case, the sequence of steps
 #  source, by rsyncing
@@ -564,6 +569,9 @@ $(1)-extract:		$(1)-rsync
 $(1)-rsync:		$$($(2)_TARGET_RSYNC)
 
 $(1)-source:		$$($(2)_TARGET_RSYNC_SOURCE)
+
+$(1)-external-deps:
+	@echo "file://$$($(2)_OVERRIDE_SRCDIR)"
 endif
 
 $(1)-show-version:
@@ -573,11 +581,17 @@ $(1)-show-depends:
 			@echo $$($(2)_FINAL_DEPENDENCIES)
 
 $(1)-graph-depends: graph-depends-requirements
-			@$$(INSTALL) -d $$(O)/graphs
+			@$$(INSTALL) -d $$(GRAPHS_DIR)
 			@cd "$$(CONFIG_DIR)"; \
 			$$(TOPDIR)/support/scripts/graph-depends -p $(1) $$(BR2_GRAPH_DEPS_OPTS) \
-			|tee $$(O)/graphs/$$(@).dot \
-			|dot $$(BR2_GRAPH_DOT_OPTS) -T$$(BR_GRAPH_OUT) -o $$(O)/graphs/$$(@).$$(BR_GRAPH_OUT)
+			|tee $$(GRAPHS_DIR)/$$(@).dot \
+			|dot $$(BR2_GRAPH_DOT_OPTS) -T$$(BR_GRAPH_OUT) -o $$(GRAPHS_DIR)/$$(@).$$(BR_GRAPH_OUT)
+
+$(1)-all-source:       $$(foreach p,$$($(2)_FINAL_DEPENDENCIES),$$(p)-all-source) $(1)-source
+
+$(1)-all-external-deps:        $$(foreach p,$$($(2)_FINAL_DEPENDENCIES),$$(p)-all-external-deps) $(1)-external-deps
+
+$(1)-all-legal-info:   $$(foreach p,$$($(2)_FINAL_DEPENDENCIES),$$(p)-all-legal-info) $(1)-legal-info
 
 $(1)-dirclean:		$$($(2)_TARGET_DIRCLEAN)
 
@@ -762,6 +776,36 @@ endif # SITE_METHOD
 ifneq ($$(call suitable-extractor,$$($(2)_SOURCE)),$$(XZCAT))
 DL_TOOLS_DEPENDENCIES += $$(firstword $$(call suitable-extractor,$$($(2)_SOURCE)))
 endif
+
+# Ensure all virtual targets are PHONY. Listed alphabetically.
+.PHONY:	$(1) \
+	$(1)-all-external-deps \
+	$(1)-all-legal-info \
+	$(1)-all-source \
+	$(1)-build \
+	$(1)-clean-for-rebuild \
+	$(1)-clean-for-reconfigure \
+	$(1)-clean-for-reinstall \
+	$(1)-configure \
+	$(1)-depends \
+	$(1)-dirclean \
+	$(1)-external-deps \
+	$(1)-extract \
+	$(1)-graph-depends \
+	$(1)-install \
+	$(1)-install-host \
+	$(1)-install-images \
+	$(1)-install-staging \
+	$(1)-install-target \
+	$(1)-legal-info \
+	$(1)-patch \
+	$(1)-rebuild \
+	$(1)-reconfigure \
+	$(1)-reinstall \
+	$(1)-rsync \
+	$(1)-show-depends \
+	$(1)-show-version \
+	$(1)-source
 
 endif # $(2)_KCONFIG_VAR
 endef # inner-generic-package

@@ -23,7 +23,7 @@ Configure Buildroot
 -------------------
 
 The raspberrypi_defconfig configuration is a minimal configuration with
-all that is required to bring the Raspberry Pi. You should base your
+all that is required to bring the Raspberry Pi up. You should base your
 work on this defconfig:
 
   $ make raspberrypi_defconfig
@@ -31,6 +31,10 @@ work on this defconfig:
 Alternatively, if you want to test support for the Device Tree:
 
   $ make raspberrypi_dt_defconfig
+
+For Raspberry Pi 2 use a different defconfig:
+
+  $ make raspberrypi2_defconfig
 
 If you want to use a persistent rootfs, skip to "Build the rootfs", below.
 

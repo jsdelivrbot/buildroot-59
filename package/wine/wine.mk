@@ -23,14 +23,10 @@ WINE_CONF_OPTS = \
 	--without-gphoto \
 	--without-gsm \
 	--without-hal \
-	--without-netapi \
 	--without-openal \
 	--without-opencl \
-	--without-opengl \
 	--without-osmesa \
-	--without-oss \
-	--without-xshape \
-	--without-xshm
+	--without-oss
 
 # Wine uses a wrapper around gcc, and uses the value of --host to
 # construct the filename of the gcc to call.  But for external
@@ -108,6 +104,13 @@ WINE_CONF_OPTS += --with-cms
 WINE_DEPENDENCIES += lcms2
 else
 WINE_CONF_OPTS += --without-cms
+endif
+
+ifeq ($(BR2_PACKAGE_HAS_LIBGL),y)
+WINE_CONF_OPTS += --with-opengl
+WINE_DEPENDENCIES += libgl
+else
+WINE_CONF_OPTS += --without-opengl
 endif
 
 ifeq ($(BR2_PACKAGE_LIBGLU),y)
@@ -199,6 +202,13 @@ WINE_CONF_OPTS += --with-xcursor
 WINE_DEPENDENCIES += xlib_libXcursor
 else
 WINE_CONF_OPTS += --without-xcursor
+endif
+
+ifeq ($(BR2_PACKAGE_XLIB_LIBXEXT),y)
+WINE_CONF_OPTS += --with-xshape --with-xshm
+WINE_DEPENDENCIES += xlib_libXext
+else
+WINE_CONF_OPTS += --without-xshape --without-xshm
 endif
 
 ifeq ($(BR2_PACKAGE_XLIB_LIBXI),y)
@@ -293,7 +303,6 @@ HOST_WINE_CONF_OPTS += \
 	--without-jpeg \
 	--without-ldap \
 	--without-mpg123 \
-	--without-netapi \
 	--without-openal \
 	--without-opencl \
 	--without-opengl \

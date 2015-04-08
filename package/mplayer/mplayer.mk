@@ -45,6 +45,52 @@ else
 MPLAYER_CONF_OPTS += --disable-freetype
 endif
 
+# We intentionally don't pass --enable-fontconfig, to let the
+# autodetection find which library to link with.
+ifeq ($(BR2_PACKAGE_FONTCONFIG),y)
+MPLAYER_DEPENDENCIES += fontconfig
+else
+MPLAYER_CONF_OPTS += --disable-fontconfig
+endif
+
+ifeq ($(BR2_PACKAGE_LIBENCA),y)
+MPLAYER_CONF_OPTS += --enable-enca
+MPLAYER_DEPENDENCIES += libenca
+else
+MPLAYER_CONF_OPTS += --disable-enca
+endif
+
+# We intentionally don't pass --enable-fribidi, to let the
+# autodetection find which library to link with.
+ifeq ($(BR2_PACKAGE_LIBFRIBIDI),y)
+MPLAYER_DEPENDENCIES += libfribidi
+else
+MPLAYER_CONF_OPTS += --disable-fribidi
+endif
+
+# We intentionally don't pass --enable-termcap, in order to let the
+# autodetection find with which library to link with. Otherwise, we
+# would have to pass it manually.
+ifeq ($(BR2_PACKAGE_NCURSES),y)
+MPLAYER_DEPENDENCIES += ncurses
+else
+MPLAYER_CONF_OPTS += --disable-termcap
+endif
+
+ifeq ($(BR2_PACKAGE_SAMBA_SMBCLIENT),y)
+MPLAYER_CONF_OPTS += --enable-smb
+MPLAYER_DEPENDENCIES += samba
+else
+MPLAYER_CONF_OPTS += --disable-smb
+endif
+
+ifeq ($(BR2_PACKAGE_LIBBLURAY),y)
+MPLAYER_CONF_OPTS += --enable-bluray
+MPLAYER_DEPENDENCIES += libbluray
+else
+MPLAYER_CONF_OPTS += --disable-bluray
+endif
+
 ifeq ($(BR2_PACKAGE_LIBDVDREAD),y)
 MPLAYER_CONF_OPTS +=  \
 	--enable-dvdread \
@@ -70,6 +116,12 @@ ifeq ($(BR2_PACKAGE_MPLAYER_MENCODER),y)
 MPLAYER_CONF_OPTS += --enable-mencoder
 else
 MPLAYER_CONF_OPTS += --disable-mencoder
+endif
+
+# We intentionally don't pass --disable-ass-internal --enable-ass and
+# let autodetection find which library to link with.
+ifeq ($(BR2_PACKAGE_LIBASS),y)
+MPLAYER_DEPENDENCIES += libass
 endif
 
 ifeq ($(BR2_PACKAGE_TREMOR),y)
