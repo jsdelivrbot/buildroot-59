@@ -176,23 +176,13 @@ menu "Filesystem and flash utilities"
 	source "package/xfsprogs/Config.in"
 endmenu
 
-menu "Games"
-	source "package/doom-wad/Config.in"
-	source "package/gnuchess/Config.in"
-	source "package/lbreakout2/Config.in"
-	source "package/ltris/Config.in"
-	source "package/opentyrian/Config.in"
-	source "package/opentyrian-data/Config.in"
-	source "package/prboom/Config.in"
-	source "package/rubix/Config.in"
-	source "package/sl/Config.in"
-endmenu
-
 menu "Fonts, icons, sounds and themes"
 
 comment "Fonts"
+	source "package/bitstream-vera/Config.in"
 	source "package/dejavu/Config.in"
 	source "package/ghostscript-fonts/Config.in"
+	source "package/inconsolata/Config.in"
 	source "package/liberation/Config.in"
 
 comment "Icons"
@@ -206,6 +196,18 @@ comment "Sounds"
 comment "Themes"
 	source "package/gtk2-engines/Config.in"
 
+endmenu
+
+menu "Games"
+	source "package/doom-wad/Config.in"
+	source "package/gnuchess/Config.in"
+	source "package/lbreakout2/Config.in"
+	source "package/ltris/Config.in"
+	source "package/opentyrian/Config.in"
+	source "package/opentyrian-data/Config.in"
+	source "package/prboom/Config.in"
+	source "package/rubix/Config.in"
+	source "package/sl/Config.in"
 endmenu
 
 menu "Graphic libraries and applications (graphic/text)"
@@ -741,6 +743,7 @@ menu "Graphics"
 	source "package/libdri2/Config.in"
 	source "package/libdrm/Config.in"
 	source "package/libexif/Config.in"
+	source "package/libfreeimage/Config.in"
 	source "package/libgail/Config.in"
 	source "package/libgeotiff/Config.in"
 	source "package/libglade/Config.in"

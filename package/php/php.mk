@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-PHP_VERSION = 5.5.23
+PHP_VERSION = 5.6.7
 PHP_SITE = http://www.php.net/distributions
 PHP_SOURCE = php-$(PHP_VERSION).tar.xz
 PHP_INSTALL_STAGING = YES
@@ -20,7 +20,16 @@ PHP_CONF_OPTS = \
 	--without-pear \
 	--with-config-file-path=/etc \
 	--disable-rpath
-PHP_CONF_ENV = EXTRA_LIBS="$(PHP_EXTRA_LIBS)"
+PHP_CONF_ENV = \
+	ac_cv_func_strcasestr=yes \
+	EXTRA_LIBS="$(PHP_EXTRA_LIBS)"
+
+# PHP can't be AUTORECONFed the standard way unfortunately
+PHP_DEPENDENCIES += host-autoconf host-automake host-libtool
+define PHP_BUILDCONF
+	cd $(@D) ; $(TARGET_MAKE_ENV) ./buildconf --force
+endef
+PHP_PRE_CONFIGURE_HOOKS += PHP_BUILDCONF
 
 ifeq ($(BR2_ENDIAN),"BIG")
 PHP_CONF_ENV += ac_cv_c_bigendian_php=yes
@@ -30,6 +39,19 @@ endif
 PHP_CONFIG_SCRIPTS = php-config
 
 PHP_CFLAGS = $(TARGET_CFLAGS)
+
+# The OPcache extension isn't cross-compile friendly
+# Throw some defines here to avoid patching heavily
+ifeq ($(BR2_PACKAGE_PHP_EXT_OPCACHE),y)
+PHP_CONF_OPTS += --enable-opcache
+PHP_CONF_ENV += ac_cv_func_mprotect=yes
+PHP_CFLAGS += \
+	-DHAVE_SHM_IPC \
+	-DHAVE_SHM_MMAP_ANON \
+	-DHAVE_SHM_MMAP_ZERO \
+	-DHAVE_SHM_MMAP_POSIX \
+	-DHAVE_SHM_MMAP_FILE
+endif
 
 # We need to force dl "detection"
 ifeq ($(BR2_STATIC_LIBS),)

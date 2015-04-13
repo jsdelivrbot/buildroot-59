@@ -68,6 +68,14 @@ else
 MPLAYER_CONF_OPTS += --disable-fribidi
 endif
 
+# We intentionally don't pass --enable-libiconv, to let the
+# autodetection find which library to link with.
+ifeq ($(BR2_PACKAGE_LIBICONV),y)
+MPLAYER_DEPENDENCIES += libiconv
+else
+MPLAYER_CONF_OPTS += --disable-iconv
+endif
+
 # We intentionally don't pass --enable-termcap, in order to let the
 # autodetection find with which library to link with. Otherwise, we
 # would have to pass it manually.
@@ -90,6 +98,11 @@ MPLAYER_DEPENDENCIES += libbluray
 else
 MPLAYER_CONF_OPTS += --disable-bluray
 endif
+
+# cdio support is broken in buildroot atm due to missing libcdio-paranoia
+# package and this patch
+# https://github.com/pld-linux/mplayer/blob/master/mplayer-libcdio.patch
+MPLAYER_CONF_OPTS += --disable-libcdio
 
 ifeq ($(BR2_PACKAGE_LIBDVDREAD),y)
 MPLAYER_CONF_OPTS +=  \
@@ -118,10 +131,31 @@ else
 MPLAYER_CONF_OPTS += --disable-mencoder
 endif
 
+ifeq ($(BR2_PACKAGE_FAAD2),y)
+MPLAYER_DEPENDENCIES += faad2
+MPLAYER_CONF_OPTS += --enable-faad
+else
+MPLAYER_CONF_OPTS += --disable-faad
+endif
+
+ifeq ($(BR2_PACKAGE_LAME),y)
+MPLAYER_DEPENDENCIES += lame
+MPLAYER_CONF_OPTS += --enable-mp3lame
+else
+MPLAYER_CONF_OPTS += --disable-mp3lame
+endif
+
 # We intentionally don't pass --disable-ass-internal --enable-ass and
 # let autodetection find which library to link with.
 ifeq ($(BR2_PACKAGE_LIBASS),y)
 MPLAYER_DEPENDENCIES += libass
+endif
+
+# We intentionally don't pass --enable-libmpeg2 and let autodetection
+# find which library to link with.
+ifeq ($(BR2_PACKAGE_LIBMPEG2),y)
+MPLAYER_DEPENDENCIES += libmpeg2
+MPLAYER_CONF_OPTS += --disable-libmpeg2-internal
 endif
 
 ifeq ($(BR2_PACKAGE_TREMOR),y)
@@ -159,6 +193,29 @@ else
 MPLAYER_CONF_OPTS += --disable-gif
 endif
 
+# We intentionally don't pass --enable-librtmp to let autodetection
+# find which library to link with.
+ifeq ($(BR2_PACKAGE_RTMPDUMP),y)
+MPLAYER_DEPENDENCIES += rtmpdump
+else
+MPLAYER_CONF_OPTS += --disable-librtmp
+endif
+
+ifeq ($(BR2_PACKAGE_SPEEX),y)
+MPLAYER_DEPENDENCIES += speex
+MPLAYER_CONF_OPTS += --enable-speex
+else
+MPLAYER_CONF_OPTS += --disable-speex
+endif
+
+ifeq ($(BR2_PACKAGE_LZO),y)
+MPLAYER_DEPENDENCIES += lzo
+MPLAYER_CONF_OPTS += --enable-liblzo
+else
+MPLAYER_CONF_OPTS += --disable-liblzo
+endif
+
+MPLAYER_DEPENDENCIES += $(if $(BR2_PACKAGE_BZIP2),bzip2)
 MPLAYER_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBTHEORA),libtheora)
 MPLAYER_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBPNG),libpng)
 MPLAYER_DEPENDENCIES += $(if $(BR2_PACKAGE_JPEG),jpeg)
