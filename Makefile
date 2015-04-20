@@ -297,7 +297,7 @@ unexport MACHINE
 
 GNU_HOST_NAME := $(shell support/gnuconfig/config.guess)
 
-TARGETS :=
+PACKAGES :=
 
 # silent mode requested?
 QUIET := $(if $(findstring s,$(filter-out --%,$(MAKEFLAGS))),-q)
@@ -389,17 +389,16 @@ include fs/common.mk
 
 include $(BR2_EXTERNAL)/external.mk
 
-TARGETS_SOURCE := $(patsubst %,%-source,$(TARGETS))
-TARGETS_DIRCLEAN := $(patsubst %,%-dirclean,$(TARGETS))
+PACKAGES_SOURCE := $(patsubst %,%-source,$(PACKAGES))
 
 # host-* dependencies have to be handled specially, as those aren't
-# visible in Kconfig and hence not added to a variable like TARGETS.
+# visible in Kconfig and hence not added to a variable like PACKAGES.
 # instead, find all the host-* targets listed in each <PKG>_DEPENDENCIES
 # variable for each enabled target.
 # Notice: this only works for newstyle gentargets/autotargets packages
 TARGETS_HOST_DEPS = $(sort $(filter host-%,$(foreach dep,\
 		$(addsuffix _DEPENDENCIES,\
-			$(call UPPERCASE,$(TARGETS) $(TARGETS_ROOTFS))),\
+			$(call UPPERCASE,$(PACKAGES) $(TARGETS_ROOTFS))),\
 		$($(dep)))))
 # Host packages can in turn have their own dependencies. Likewise find
 # all the package names listed in the HOST_<PKG>_DEPENDENCIES for each
@@ -410,9 +409,6 @@ HOST_DEPS = $(sort $(foreach dep,\
 		$(addsuffix _DEPENDENCIES,$(call UPPERCASE,$(TARGETS_HOST_DEPS))),\
 		$($(dep))))
 HOST_SOURCE += $(addsuffix -source,$(sort $(TARGETS_HOST_DEPS) $(HOST_DEPS)))
-
-TARGETS_LEGAL_INFO := $(patsubst %,%-legal-info,\
-		$(TARGETS) $(TARGETS_HOST_DEPS) $(HOST_DEPS))
 
 dirs: $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) \
 	$(HOST_DIR) $(BINARIES_DIR)
@@ -426,9 +422,7 @@ world: target-post-image
 
 .PHONY: all world toolchain dirs clean distclean source outputmakefile \
 	legal-info legal-info-prepare legal-info-clean printvars help \
-	list-defconfigs target-finalize target-post-image \
-	$(TARGETS) $(TARGETS_ROOTFS) \
-	$(TARGETS_DIRCLEAN) $(TARGETS_SOURCE) $(TARGETS_LEGAL_INFO)
+	list-defconfigs target-finalize target-post-image
 
 ################################################################################
 #
@@ -508,7 +502,7 @@ endif
 ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),y)
 GLIBC_GENERATE_LOCALES = $(call qstrip,$(BR2_GENERATE_LOCALE))
 ifneq ($(GLIBC_GENERATE_LOCALES),)
-TARGETS += host-localedef
+PACKAGES += host-localedef
 
 define GENERATE_GLIBC_LOCALES
 	$(Q)mkdir -p $(TARGET_DIR)/usr/lib/locale/
@@ -552,7 +546,7 @@ endif
 
 $(TARGETS_ROOTFS): target-finalize
 
-target-finalize: $(TARGETS)
+target-finalize: $(PACKAGES)
 	@$(call MESSAGE,"Finalizing target directory")
 	$(foreach hook,$(TARGET_FINALIZE_HOOKS),$($(hook))$(sep))
 	rm -rf $(TARGET_DIR)/usr/include $(TARGET_DIR)/usr/share/aclocal \
@@ -589,9 +583,11 @@ endif
 	mkdir -p $(TARGET_DIR)/var/cache/ldconfig
 	if [ -x "$(TARGET_CROSS)ldconfig" ]; \
 	then \
-		$(TARGET_CROSS)ldconfig -r $(TARGET_DIR); \
+		$(TARGET_CROSS)ldconfig -r $(TARGET_DIR) \
+					-f $(TARGET_DIR)/etc/ld.so.conf; \
 	else \
-		/sbin/ldconfig -r $(TARGET_DIR); \
+		/sbin/ldconfig -r $(TARGET_DIR) \
+			       -f $(TARGET_DIR)/etc/ld.so.conf; \
 	fi
 	( \
 		echo "NAME=Buildroot"; \
@@ -616,7 +612,7 @@ target-post-image: $(TARGETS_ROOTFS) target-finalize
 		$(call MESSAGE,"Executing post-image script $(s)"); \
 		$(EXTRA_ENV) $(s) $(BINARIES_DIR) $(call qstrip,$(BR2_ROOTFS_POST_SCRIPT_ARGS))$(sep))
 
-source: $(TARGETS_SOURCE) $(HOST_SOURCE)
+source: $(PACKAGES_SOURCE) $(HOST_SOURCE)
 
 external-deps:
 	@$(MAKE1) -Bs DL_MODE=SHOW_EXTERNAL_DEPS $(EXTRAMAKEARGS) source | sort -u
@@ -634,7 +630,7 @@ legal-info-prepare: $(LEGAL_INFO_DIR)
 	@$(call legal-warning,the toolchain has not been saved)
 	@cp $(BR2_CONFIG) $(LEGAL_INFO_DIR)/buildroot.config
 
-legal-info: dirs legal-info-clean legal-info-prepare $(TARGETS_LEGAL_INFO) \
+legal-info: dirs legal-info-clean legal-info-prepare $(foreach p,$(PACKAGES),$(p)-all-legal-info) \
 		$(REDIST_SOURCES_DIR_TARGET) $(REDIST_SOURCES_DIR_HOST)
 	@cat support/legal-info/README.header >>$(LEGAL_REPORT)
 	@if [ -r $(LEGAL_WARNINGS) ]; then \
@@ -645,7 +641,7 @@ legal-info: dirs legal-info-clean legal-info-prepare $(TARGETS_LEGAL_INFO) \
 	@rm -f $(LEGAL_WARNINGS)
 
 show-targets:
-	@echo $(HOST_DEPS) $(TARGETS_HOST_DEPS) $(TARGETS) $(TARGETS_ROOTFS)
+	@echo $(PACKAGES) $(TARGETS_ROOTFS)
 
 graph-build: $(O)/build/build-time.log
 	@install -d $(GRAPHS_DIR)
@@ -700,23 +696,18 @@ COMMON_CONFIG_ENV = \
 	SKIP_LEGACY=
 
 xconfig: $(BUILD_DIR)/buildroot-config/qconf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< $(CONFIG_CONFIG_IN)
 
 gconfig: $(BUILD_DIR)/buildroot-config/gconf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) srctree=$(TOPDIR) $< $(CONFIG_CONFIG_IN)
 
 menuconfig: $(BUILD_DIR)/buildroot-config/mconf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< $(CONFIG_CONFIG_IN)
 
 nconfig: $(BUILD_DIR)/buildroot-config/nconf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< $(CONFIG_CONFIG_IN)
 
 config: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< $(CONFIG_CONFIG_IN)
 
 # For the config targets that automatically select options, we pass
@@ -725,26 +716,21 @@ config: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 # will query them. Therefore, run an additional olddefconfig.
 
 oldconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< --oldconfig $(CONFIG_CONFIG_IN)
 
 randconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y $< --randconfig $(CONFIG_CONFIG_IN)
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 allyesconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y $< --allyesconfig $(CONFIG_CONFIG_IN)
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 allnoconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y $< --allnoconfig $(CONFIG_CONFIG_IN)
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 randpackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@grep -v BR2_PACKAGE_ $(BR2_CONFIG) > $(CONFIG_DIR)/.config.nopkg
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y \
 		KCONFIG_ALLCONFIG=$(CONFIG_DIR)/.config.nopkg \
@@ -753,7 +739,6 @@ randpackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 allyespackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@grep -v BR2_PACKAGE_ $(BR2_CONFIG) > $(CONFIG_DIR)/.config.nopkg
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y \
 		KCONFIG_ALLCONFIG=$(CONFIG_DIR)/.config.nopkg \
@@ -762,7 +747,6 @@ allyespackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 allnopackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@grep -v BR2_PACKAGE_ $(BR2_CONFIG) > $(CONFIG_DIR)/.config.nopkg
 	@$(COMMON_CONFIG_ENV) SKIP_LEGACY=y \
 		KCONFIG_ALLCONFIG=$(CONFIG_DIR)/.config.nopkg \
@@ -771,30 +755,24 @@ allnopackageconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN) >/dev/null
 
 silentoldconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	$(COMMON_CONFIG_ENV) $< --silentoldconfig $(CONFIG_CONFIG_IN)
 
 olddefconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	$(COMMON_CONFIG_ENV) $< --olddefconfig $(CONFIG_CONFIG_IN)
 
 defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< --defconfig$(if $(DEFCONFIG),=$(DEFCONFIG)) $(CONFIG_CONFIG_IN)
 
 # Override the BR2_DEFCONFIG from COMMON_CONFIG_ENV with the new defconfig
 %_defconfig: $(BUILD_DIR)/buildroot-config/conf $(TOPDIR)/configs/%_defconfig outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) BR2_DEFCONFIG=$(TOPDIR)/configs/$@ \
 		$< --defconfig=$(TOPDIR)/configs/$@ $(CONFIG_CONFIG_IN)
 
 %_defconfig: $(BUILD_DIR)/buildroot-config/conf $(BR2_EXTERNAL)/configs/%_defconfig outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) BR2_DEFCONFIG=$(BR2_EXTERNAL)/configs/$@ \
 		$< --defconfig=$(BR2_EXTERNAL)/configs/$@ $(CONFIG_CONFIG_IN)
 
 savedefconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
-	@mkdir -p $(BUILD_DIR)/buildroot-config
 	@$(COMMON_CONFIG_ENV) $< \
 		--savedefconfig=$(if $(DEFCONFIG),$(DEFCONFIG),$(CONFIG_DIR)/defconfig) \
 		$(CONFIG_CONFIG_IN)
