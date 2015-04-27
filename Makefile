@@ -75,7 +75,25 @@ export BR2_VERSION_FULL := $(BR2_VERSION)$(shell $(TOPDIR)/support/scripts/setlo
 noconfig_targets := menuconfig nconfig gconfig xconfig config oldconfig randconfig \
 	defconfig %_defconfig allyesconfig allnoconfig silentoldconfig release \
 	randpackageconfig allyespackageconfig allnopackageconfig \
-	source-check print-version olddefconfig
+	print-version olddefconfig
+
+# Some global targets do not trigger a build, but are used to collect
+# metadata, or do various checks. When such targets are triggered,
+# some packages should not do their configuration sanity
+# checks. Provide them a BR_BUILDING variable set to 'y' when we're
+# actually building and they should do their sanity checks.
+#
+# We're building in two situations: when MAKECMDGOALS is empty
+# (default target is to build), or when MAKECMDGOALS contains
+# something else than one of the nobuild_targets.
+nobuild_targets := source source-check \
+	legal-info external-deps _external-deps \
+	clean distclean
+ifeq ($(MAKECMDGOALS),)
+BR_BUILDING = y
+else ifneq ($(filter-out $(nobuild_targets),$(MAKECMDGOALS)),)
+BR_BUILDING = y
+endif
 
 # Strip quotes and then whitespaces
 qstrip = $(strip $(subst ",,$(1)))
@@ -389,27 +407,6 @@ include fs/common.mk
 
 include $(BR2_EXTERNAL)/external.mk
 
-PACKAGES_SOURCE := $(patsubst %,%-source,$(PACKAGES))
-
-# host-* dependencies have to be handled specially, as those aren't
-# visible in Kconfig and hence not added to a variable like PACKAGES.
-# instead, find all the host-* targets listed in each <PKG>_DEPENDENCIES
-# variable for each enabled target.
-# Notice: this only works for newstyle gentargets/autotargets packages
-TARGETS_HOST_DEPS = $(sort $(filter host-%,$(foreach dep,\
-		$(addsuffix _DEPENDENCIES,\
-			$(call UPPERCASE,$(PACKAGES) $(TARGETS_ROOTFS))),\
-		$($(dep)))))
-# Host packages can in turn have their own dependencies. Likewise find
-# all the package names listed in the HOST_<PKG>_DEPENDENCIES for each
-# host package found above. Ideally this should be done recursively until
-# no more packages are found, but that's hard to do in make, so limit to
-# 1 level for now.
-HOST_DEPS = $(sort $(foreach dep,\
-		$(addsuffix _DEPENDENCIES,$(call UPPERCASE,$(TARGETS_HOST_DEPS))),\
-		$($(dep))))
-HOST_SOURCE += $(addsuffix -source,$(sort $(TARGETS_HOST_DEPS) $(HOST_DEPS)))
-
 dirs: $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) \
 	$(HOST_DIR) $(BINARIES_DIR)
 
@@ -422,7 +419,7 @@ world: target-post-image
 
 .PHONY: all world toolchain dirs clean distclean source outputmakefile \
 	legal-info legal-info-prepare legal-info-clean printvars help \
-	list-defconfigs target-finalize target-post-image
+	list-defconfigs target-finalize target-post-image source-check
 
 ################################################################################
 #
@@ -577,7 +574,7 @@ ifeq ($(BR2_TOOLCHAIN_HAS_THREADS),y)
 endif
 
 	mkdir -p $(TARGET_DIR)/etc
-	# Mandatory configuration file and auxilliary cache directory
+	# Mandatory configuration file and auxiliary cache directory
 	# for recent versions of ldconfig
 	touch $(TARGET_DIR)/etc/ld.so.conf
 	mkdir -p $(TARGET_DIR)/var/cache/ldconfig
@@ -612,10 +609,14 @@ target-post-image: $(TARGETS_ROOTFS) target-finalize
 		$(call MESSAGE,"Executing post-image script $(s)"); \
 		$(EXTRA_ENV) $(s) $(BINARIES_DIR) $(call qstrip,$(BR2_ROOTFS_POST_SCRIPT_ARGS))$(sep))
 
-source: $(PACKAGES_SOURCE) $(HOST_SOURCE)
+source: $(foreach p,$(PACKAGES),$(p)-all-source)
 
+_external-deps: $(foreach p,$(PACKAGES),$(p)-all-external-deps)
 external-deps:
-	@$(MAKE1) -Bs DL_MODE=SHOW_EXTERNAL_DEPS $(EXTRAMAKEARGS) source | sort -u
+	@$(MAKE1) -Bs $(EXTRAMAKEARGS) _external-deps | sort -u
+
+# check if download URLs are outdated
+source-check: $(foreach p,$(PACKAGES),$(p)-all-source-check)
 
 legal-info-clean:
 	@rm -fr $(LEGAL_INFO_DIR)
@@ -777,10 +778,6 @@ savedefconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 		--savedefconfig=$(if $(DEFCONFIG),$(DEFCONFIG),$(CONFIG_DIR)/defconfig) \
 		$(CONFIG_CONFIG_IN)
 
-# check if download URLs are outdated
-source-check:
-	$(MAKE1) DL_MODE=SOURCE_CHECK $(EXTRAMAKEARGS) source
-
 .PHONY: defconfig savedefconfig
 
 ################################################################################
@@ -886,6 +883,7 @@ endif
 	@echo '  manual-epub            - build manual in ePub'
 	@echo '  graph-build            - generate graphs of the build times'
 	@echo '  graph-depends          - generate graph of the dependency tree'
+	@echo '  list-defconfigs        - list all defconfigs (pre-configured minimal systems)'
 	@echo
 	@echo 'Miscellaneous:'
 	@echo '  source                 - download all sources needed for offline-build'

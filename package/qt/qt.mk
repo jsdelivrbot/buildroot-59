@@ -46,6 +46,11 @@ QT_CFLAGS += -marm
 QT_CXXFLAGS += -marm
 endif
 
+ifeq ($(BR2_PACKAGE_QT_QT_COORD_TYPE_DOUBLE),y)
+QT_CFLAGS += -DQT_COORD_TYPE=double
+QT_CXXFLAGS += -DQT_COORD_TYPE=double
+endif
+
 ifeq ($(BR2_PACKAGE_QT_QT3SUPPORT),y)
 QT_CONFIGURE_OPTS += -qt3support
 else
@@ -473,13 +478,6 @@ define QT_QMAKE_SET
 	$(SED) '/$(1)/d' $(3)/mkspecs/qws/linux-$(QT_EMB_PLATFORM)-g++/qmake.conf
 	$(SED) '/include.*qws.conf/a$(1) = $(2)' $(3)/mkspecs/qws/linux-$(QT_EMB_PLATFORM)-g++/qmake.conf
 endef
-
-ifneq ($(BR2_INET_IPV6),y)
-define QT_CONFIGURE_IPV6
-	$(SED) 's/^CFG_IPV6=auto/CFG_IPV6=no/' $(@D)/configure
-	$(SED) 's/^CFG_IPV6IFNAME=auto/CFG_IPV6IFNAME=no/' $(@D)/configure
-endef
-endif
 
 ifneq ($(QT_CONFIG_FILE),)
 define QT_CONFIGURE_CONFIG_FILE

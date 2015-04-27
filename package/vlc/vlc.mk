@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-VLC_VERSION = 2.2.0
+VLC_VERSION = 2.2.1
 VLC_SITE = http://get.videolan.org/vlc/$(VLC_VERSION)
 VLC_SOURCE = vlc-$(VLC_VERSION).tar.xz
 VLC_LICENSE = GPLv2+ LGPLv2.1+
@@ -24,6 +24,7 @@ endef
 VLC_POST_PATCH_HOOKS += VLC_OVERRIDE_PKG_M4
 
 VLC_CONF_OPTS += \
+	--disable-gles1 \
 	--disable-a52 \
 	--disable-shout \
 	--disable-twolame \
@@ -137,10 +138,10 @@ VLC_DEPENDENCIES += libgl
 endif
 
 ifeq ($(BR2_PACKAGE_HAS_LIBGLES),y)
-VLC_CONF_OPTS += --enable-gles1 --enable-gles2
+VLC_CONF_OPTS += --enable-gles2
 VLC_DEPENDENCIES += libgles
 else
-VLC_CONF_OPTS += --disable-gles1 --disable-gles2
+VLC_CONF_OPTS += --disable-gles2
 endif
 
 ifeq ($(BR2_PACKAGE_OPUS),y)

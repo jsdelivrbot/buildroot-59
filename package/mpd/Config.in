@@ -78,14 +78,10 @@ config BR2_PACKAGE_MPD_FAAD2
 config BR2_PACKAGE_MPD_FFMPEG
 	bool "ffmpeg"
 	select BR2_PACKAGE_FFMPEG
-	depends on BR2_INET_IPV6
 	help
 	  Enable ffmpeg input support.
 	  Select this if you want to play back files supported by
 	  ffmpeg.
-
-comment "ffmpeg support needs a toolchain w/ IPv6"
-	depends on !BR2_INET_IPV6
 
 config BR2_PACKAGE_MPD_FLAC
 	bool "flac"
@@ -270,7 +266,7 @@ config BR2_PACKAGE_MPD_NEIGHBOR_DISCOVERY_SUPPORT
 	  This option can be used in conjunction with the smbclient
 	  plugin to provide a list of SMB/CIFS servers or with the
 	  UPnP plugin to provide a list of UPnP servers on the local
-	  network.  The neighbor plugin needs configuration in
+	  network. The neighbor plugin needs configuration in
 	  mpd.conf. For further information take a look at the MPD
 	  documentation.
 
