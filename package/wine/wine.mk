@@ -10,6 +10,8 @@ WINE_SITE = http://downloads.sourceforge.net/project/wine/Source
 WINE_LICENSE = LGPLv2.1+
 WINE_LICENSE_FILES = COPYING.LIB LICENSE
 WINE_DEPENDENCIES = host-bison host-flex host-wine
+# For 0002-detect-ncursesw.patch
+WINE_AUTORECONF = YES
 
 # Wine needs its own directory structure and tools for cross compiling
 WINE_CONF_OPTS = \
@@ -39,7 +41,7 @@ ifeq ($(BR2_TOOLCHAIN_EXTERNAL),y)
 WINE_CONF_OPTS += TARGETFLAGS="-b $(call qstrip,$(BR2_TOOLCHAIN_EXTERNAL_PREFIX))"
 endif
 
-ifeq ($(BR2_PACKAGE_ALSA_LIB)$(BR2_PACKAGE_ALSA_LIB_SEQ),yy)
+ifeq ($(BR2_PACKAGE_ALSA_LIB)$(BR2_PACKAGE_ALSA_LIB_SEQ)$(BR2_PACKAGE_ALSA_LIB_RAWMIDI),yyy)
 WINE_CONF_OPTS += --with-alsa
 WINE_DEPENDENCIES += alsa-lib
 else

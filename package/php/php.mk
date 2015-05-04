@@ -24,6 +24,12 @@ PHP_CONF_ENV = \
 	ac_cv_func_strcasestr=yes \
 	EXTRA_LIBS="$(PHP_EXTRA_LIBS)"
 
+ifeq ($(BR2_TARGET_LOCALTIME),)
+PHP_LOCALTIME = UTC
+else
+PHP_LOCALTIME = $(BR2_TARGET_LOCALTIME)
+endif
+
 # PHP can't be AUTORECONFed the standard way unfortunately
 PHP_DEPENDENCIES += host-autoconf host-automake host-libtool
 define PHP_BUILDCONF
@@ -251,6 +257,29 @@ PHP_CONF_OPTS += \
 PHP_DEPENDENCIES += jpeg libpng freetype
 endif
 
+ifeq ($(BR2_PACKAGE_PHP_FPM),y)
+define PHP_INSTALL_INIT_SYSV
+	$(INSTALL) -D -m 0755 $(@D)/sapi/fpm/init.d.php-fpm \
+		$(TARGET_DIR)/etc/init.d/S49php-fpm
+endef
+
+define PHP_INSTALL_INIT_SYSTEMD
+	$(INSTALL) -D -m 0644 $(@D)/sapi/fpm/php-fpm.service \
+		$(TARGET_DIR)/usr/lib/systemd/system/php-fpm.service
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -fs ../../../../usr/lib/systemd/system/php-fpm.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/php-fpm.service
+endef
+
+define PHP_INSTALL_FPM_CONF
+	$(INSTALL) -D -m 0644 package/php/php-fpm.conf \
+		$(TARGET_DIR)/etc/php-fpm.conf
+	rm -f $(TARGET_DIR)/etc/php-fpm.conf.default
+endef
+
+PHP_POST_INSTALL_TARGET_HOOKS += PHP_INSTALL_FPM_CONF
+endif
+
 define PHP_EXTENSIONS_FIXUP
 	$(SED) "/prefix/ s:/usr:$(STAGING_DIR)/usr:" \
 		$(STAGING_DIR)/usr/bin/phpize
@@ -264,6 +293,8 @@ define PHP_INSTALL_FIXUP
 	rm -rf $(TARGET_DIR)/usr/lib/php
 	rm -f $(TARGET_DIR)/usr/bin/phpize
 	$(INSTALL) -D -m 0755 $(PHP_DIR)/php.ini-production \
+		$(TARGET_DIR)/etc/php.ini
+	$(SED) 's%;date.timezone =.*%date.timezone = $(PHP_LOCALTIME)%' \
 		$(TARGET_DIR)/etc/php.ini
 endef
 
