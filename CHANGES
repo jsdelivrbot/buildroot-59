@@ -1,4 +1,28 @@
-2015.05, Not yet released
+2015.05-rc2, Released May 11th, 2015
+
+	Minor fixes.
+
+	Toolchain: PR56780 backport to GCC 4.8.4 to fix GDB linking
+	issues. Context functions enabled for uClibc snapshot /
+	uClibc-NG.
+
+	Architectures: Endian handling symbol for Xtensa, binutils
+	fixes.
+
+	Infrastructure: Fix for kernel module stripping when
+	localversion contains spaces.
+
+	Updated/fixed packages: at, autoconf-archive, binutils,
+	cc-tool, cryptsetup, dstat, expedite, freerdp, giflib,
+	gnuchess, guile, ipmiutil, iproute2, mono, monolite, neard,
+	ola, poppler, postgresql, python-qt, qt, sqlite, valgrind,
+	xlib_libXfont
+
+	Issues resolved (http://bugs.uclibc.org):
+
+	#8086: Cannot select systemd as init with Linaro 2014.09...
+
+2015.05-rc1, Released May 4th, 2015
 
 	Fixes all over the tree and new features.
 
@@ -26,15 +50,20 @@
 	been added. Missing hashes now stop the build unless
 	explicitly disabled.
 
-	Spaces and colons (:) are now supported in
-	package versions. Dependencies can now be listed for the patch
-	step (<PKG>_PATCH_DEPENDENCIES). Kconfig and Linux kernel
+	Spaces and colons (:) are now supported in package
+	versions. Dependencies can now be listed for the patch step
+	(<PKG>_PATCH_DEPENDENCIES). Kconfig and Linux kernel
 	extensions infrastructure has been added.
 
 	Makedevs now has a recursive (r) option.
 
 	The variable containing the list of packages to build has been
 	renamed from TARGETS to PACKAGES.
+
+	Make external-deps / legal-info / source / source-check have
+	been reimplemented using the package infrastructure, so their
+	output/behaviour may differ from earlier (some packages were
+	not included in the past).
 
 	The old insecure DES password encoding is no longer supported.
 
