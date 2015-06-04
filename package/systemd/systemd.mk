@@ -32,7 +32,6 @@ SYSTEMD_CONF_OPTS += \
 	--enable-static=no \
 	--disable-manpages \
 	--disable-selinux \
-	--disable-pam \
 	--disable-libcryptsetup \
 	--with-dbuspolicydir=/etc/dbus-1/system.d \
 	--with-dbussessionservicedir=/usr/share/dbus-1/services \
