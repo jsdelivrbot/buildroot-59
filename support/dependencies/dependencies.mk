@@ -25,7 +25,8 @@ DEPENDENCIES_HOST_PREREQ += host-ccache
 endif
 
 core-dependencies:
-	@HOSTCC="$(firstword $(HOSTCC))" MAKE="$(MAKE)" \
+	@HOSTCC="$(firstword $(HOSTCC))" HOSTCXX="$(firstword $(HOSTCXX))" \
+		MAKE="$(MAKE)" \
 		DL_TOOLS="$(sort $(DL_TOOLS_DEPENDENCIES))" \
 		$(TOPDIR)/support/dependencies/dependencies.sh
 

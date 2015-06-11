@@ -70,7 +70,7 @@ check_prog_host "which"
 check_prog_host "sed"
 
 # Check make
-MAKE=$(which make 2> /dev/null)
+MAKE=$(which $MAKE 2> /dev/null)
 if [ -z "$MAKE" ] ; then
 	echo
 	echo "You must install 'make' on your build machine";
@@ -91,7 +91,7 @@ if [ $MAKE_MAJOR -lt 3 ] || [ $MAKE_MAJOR -eq 3 -a $MAKE_MINOR -lt 81 ] ; then
 fi;
 
 # Check host gcc
-COMPILER=$(which $HOSTCC_NOCCACHE 2> /dev/null)
+COMPILER=$(which $HOSTCC 2> /dev/null)
 if [ -z "$COMPILER" ] ; then
 	COMPILER=$(which cc 2> /dev/null)
 fi;
@@ -117,7 +117,7 @@ if [ $COMPILER_MAJOR -lt 3 -o $COMPILER_MAJOR -eq 2 -a $COMPILER_MINOR -lt 95 ] 
 fi;
 
 # check for host CXX
-CXXCOMPILER=$(which $HOSTCXX_NOCCACHE 2> /dev/null)
+CXXCOMPILER=$(which $HOSTCXX 2> /dev/null)
 if [ -z "$CXXCOMPILER" ] ; then
 	CXXCOMPILER=$(which c++ 2> /dev/null)
 fi
@@ -227,7 +227,7 @@ if grep -q ^BR2_HOSTARCH_NEEDS_IA32_LIBS=y $BR2_CONFIG ; then
 fi
 
 if grep -q ^BR2_HOSTARCH_NEEDS_IA32_COMPILER=y $BR2_CONFIG ; then
-	if ! echo "int main(void) {}" | gcc -m32 -x c - -o /dev/null 2>/dev/null; then
+	if ! echo "int main(void) {}" | $COMPILER -m32 -x c - -o /dev/null 2>/dev/null; then
 		echo
 		echo "Your Buildroot configuration needs a compiler capable of building 32 bits binaries."
 		echo "If you're running a Debian/Ubuntu distribution, install the gcc-multilib package."
