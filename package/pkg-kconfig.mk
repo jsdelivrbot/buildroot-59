@@ -37,9 +37,25 @@ $(2)_KCONFIG_OPTS ?=
 $(2)_KCONFIG_FIXUP_CMDS ?=
 $(2)_KCONFIG_FRAGMENT_FILES ?=
 
-# The config file could be in-tree, so before depending on it the package should
-# be extracted (and patched) first
-$$($(2)_KCONFIG_FILE): | $(1)-patch
+# The config file as well as the fragments could be in-tree, so before
+# depending on them the package should be extracted (and patched) first.
+#
+# Since those files only have a order-only dependency, make would treat
+# any missing one as a "force" target:
+#   https://www.gnu.org/software/make/manual/make.html#Force-Targets
+# and would forcibly any rule that depend on those files, causing a
+# rebuild of the kernel each time make is called.
+#
+# So, we provide a recipe that checks all of those files exist, to
+# overcome that standard make behaviour.
+#
+$$($(2)_KCONFIG_FILE) $$($(2)_KCONFIG_FRAGMENT_FILES): | $(1)-patch
+	for f in $$($(2)_KCONFIG_FILE) $$($(2)_KCONFIG_FRAGMENT_FILES); do \
+		if [ ! -f "$$$${f}" ]; then \
+			printf "Kconfig fragment '%s' for '%s' does not exist\n" "$$$${f}" "$(1)"; \
+			exit 1; \
+		fi; \
+	done
 
 # The specified source configuration file and any additional configuration file
 # fragments are merged together to .config, after the package has been patched.
@@ -54,11 +70,15 @@ $$($(2)_DIR)/.config: $$($(2)_KCONFIG_FILE) $$($(2)_KCONFIG_FRAGMENT_FILES)
 
 # In order to get a usable, consistent configuration, some fixup may be needed.
 # The exact rules are specified by the package .mk file.
-$$($(2)_DIR)/.stamp_kconfig_fixup_done: $$($(2)_DIR)/.config
+define $(2)_FIXUP_DOT_CONFIG
 	$$($(2)_KCONFIG_FIXUP_CMDS)
 	@yes "" | $$($(2)_MAKE_ENV) $$(MAKE) -C $$($(2)_DIR) \
 		$$($(2)_KCONFIG_OPTS) oldconfig
-	$$(Q)touch $$@
+	$$(Q)touch $$($(2)_DIR)/.stamp_kconfig_fixup_done
+endef
+
+$$($(2)_DIR)/.stamp_kconfig_fixup_done: $$($(2)_DIR)/.config
+	$$(call $(2)_FIXUP_DOT_CONFIG)
 
 # Before running configure, the configuration file should be present and fixed
 $$($(2)_TARGET_CONFIGURE): $$($(2)_DIR)/.stamp_kconfig_fixup_done
@@ -75,20 +95,56 @@ $$(error Internal error: no value specified for $(2)_KCONFIG_FILE)
 endif
 
 # Configuration editors (menuconfig, ...)
+#
+# We need to apply the configuration fixups right after a configuration
+# editor exits, so that it is possible to save the configuration right
+# after exiting an editor, and so the user always sees a .config file
+# that is clean wrt. our requirements.
+#
+# Because commands in $(1)_FIXUP_KCONFIG are probably using $(@D), we
+# fake it for the configurators (otherwise it is set to just '.', i.e.
+# the current directory where make is run, which happens to be in
+# $(TOPDIR), because the target of the rule is not an actual file, so
+# does not have any path component).
+#
+$$(addprefix $(1)-,$$($(2)_KCONFIG_EDITORS)): @D=$$($(2)_DIR)
 $$(addprefix $(1)-,$$($(2)_KCONFIG_EDITORS)): $$($(2)_DIR)/.stamp_kconfig_fixup_done
 	$$($(2)_MAKE_ENV) $$(MAKE) -C $$($(2)_DIR) \
 		$$($(2)_KCONFIG_OPTS) $$(subst $(1)-,,$$@)
 	rm -f $$($(2)_DIR)/.stamp_{kconfig_fixup_done,configured,built}
 	rm -f $$($(2)_DIR)/.stamp_{target,staging,images}_installed
+	$$(call $(2)_FIXUP_DOT_CONFIG)
 
-$(1)-savedefconfig: $$($(2)_DIR)/.stamp_kconfig_fixup_done
+# Saving back the configuration
+#
+# Ideally, that should directly depend on $$($(2)_DIR)/.stamp_kconfig_fixup_done,
+# but that breaks the use-case in PR-8156 (from a clean tree):
+#   make menuconfig           <- enable kernel, use an in-tree defconfig, save and exit
+#   make linux-menuconfig     <- enable/disable whatever option, save and exit
+#   make menuconfig           <- change to use a custom defconfig file, set a path, save and exit
+#   make linux-update-config  <- should save to the new custom defconfig file
+#
+# Because of that use-case, saving the configuration can *not* directly
+# depend on the stamp file, because it itself depends on the .config,
+# which in turn depends on the (newly-set an non-existent) custom
+# defconfig file.
+#
+# Instead, we use an PHONY rule that will catch that situation.
+#
+$(1)-check-configuration-done:
+	@if [ ! -f $$($(2)_DIR)/.stamp_kconfig_fixup_done ]; then \
+		echo "$(1) is not yet configured"; \
+		exit 1; \
+	fi
+
+$(1)-savedefconfig: $(1)-check-configuration-done
 	$$($(2)_MAKE_ENV) $$(MAKE) -C $$($(2)_DIR) \
 		$$($(2)_KCONFIG_OPTS) savedefconfig
 
 # Target to copy back the configuration to the source configuration file
 # Even though we could use 'cp --preserve-timestamps' here, the separate
 # cp and 'touch --reference' is used for symmetry with $(1)-update-defconfig.
-$(1)-update-config: $$($(2)_DIR)/.stamp_kconfig_fixup_done
+$(1)-update-config: $(1)-check-configuration-done
 	@$$(if $$($(2)_KCONFIG_FRAGMENT_FILES), \
 		echo "Unable to perform $(1)-update-config when fragment files are set"; exit 1)
 	cp -f $$($(2)_DIR)/.config $$($(2)_KCONFIG_FILE)
@@ -110,6 +166,7 @@ endif # package enabled
 	$(1)-update-config \
 	$(1)-update-defconfig \
 	$(1)-savedefconfig \
+	$(1)-check-configuration-done \
 	$$(addprefix $(1)-,$$($(2)_KCONFIG_EDITORS))
 
 endef # inner-kconfig-package
