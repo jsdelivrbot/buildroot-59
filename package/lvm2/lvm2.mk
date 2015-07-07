@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LVM2_VERSION = 2.02.121
+LVM2_VERSION = 2.02.124
 LVM2_SOURCE = LVM2.$(LVM2_VERSION).tgz
 LVM2_SITE = ftp://sources.redhat.com/pub/lvm2/releases
 LVM2_INSTALL_STAGING = YES
@@ -43,11 +43,9 @@ else
 LVM2_CONF_OPTS += --disable-applib
 endif
 
-HOST_LVM2_CONF_OPTS += \
-	--with-confdir=$(HOST_DIR)/etc \
-	--with-default-system-dir=$(HOST_DIR)/etc/lvm
-
-HOST_LVM2_DEPENDENCIES =
+ifeq ($(BR2_arc),y)
+LVM2_CONF_ENV += ac_cv_flag_HAVE_PIE=no
+endif
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))
