@@ -107,6 +107,31 @@ endif
 ###############################################################################
 comment "Legacy options removed in 2015.08"
 
+config BR2_PACKAGE_PERF
+	bool "perf option has been renamed"
+	select BR2_LEGACY
+	select BR2_LINUX_KERNEL_TOOL_PERF
+	help
+	  The perf package has been moved as a Linux tools package,
+	  and the option to enable it is now
+	  BR2_LINUX_KERNEL_TOOL_PERF.
+
+config BR2_BINUTILS_VERSION_2_22
+	bool "binutils 2.22 removed"
+	select BR2_LEGACY
+	help
+	  Binutils 2.22 has been removed, using a newer version is
+	  recommended.
+
+config BR2_PACKAGE_GPU_VIV_BIN_MX6Q
+	bool "gpu-viv-bin-mx6q"
+	select BR2_LEGACY
+	select BR2_PACKAGE_IMX_GPU_VIV
+	help
+	  Vivante graphics libraries have been renamed to
+	  BR2_PACKAGE_IMX_GPU_VIV to be aligned with upstream package
+	  name.
+
 config BR2_PACKAGE_LIBSEMANAGE_PYTHON_BINDINGS
 	depends on BR2_PACKAGE_PYTHON
 	bool "libsemanage python bindings removed"

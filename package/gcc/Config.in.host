@@ -79,8 +79,8 @@ choice
 		select BR2_GCC_NEEDS_MPC
 		select BR2_GCC_SUPPORTS_GRAPHITE
 
-	config BR2_GCC_VERSION_5_1_X
-		bool "gcc 5.1.x"
+	config BR2_GCC_VERSION_5_X
+		bool "gcc 5.x"
 		# Broken or unsupported architectures
 		depends on !BR2_arc
 		select BR2_GCC_NEEDS_MPC
@@ -98,8 +98,8 @@ config BR2_GCC_VERSION
 	default "4.7.4"     if BR2_GCC_VERSION_4_7_X
 	default "4.8.5"     if BR2_GCC_VERSION_4_8_X
 	default "4.9.3"     if BR2_GCC_VERSION_4_9_X
-	default "5.1.0"     if BR2_GCC_VERSION_5_1_X
-	default "arc-2015.06-rc1" if BR2_GCC_VERSION_4_8_ARC
+	default "5.2.0"     if BR2_GCC_VERSION_5_X
+	default "arc-2015.06" if BR2_GCC_VERSION_4_8_ARC
 
 config BR2_EXTRA_GCC_CONFIG_OPTIONS
 	string "Additional gcc options"
@@ -116,6 +116,13 @@ config BR2_TOOLCHAIN_BUILDROOT_CXX
 	  Enable this option if you want your toolchain to support the
 	  C++ language and you want C++ libraries to be installed on
 	  your target system.
+
+config BR2_TOOLCHAIN_BUILDROOT_FORTRAN
+	bool "Enable Fortran support"
+	help
+	  Enable this option if you want your toolchain to support the
+	  Fortran language and you want Fortran libraries to be
+	  installed on your target system.
 
 config BR2_GCC_ENABLE_TLS
 	bool "Enable compiler tls support" if BR2_TOOLCHAIN_BUILDROOT_UCLIBC
@@ -144,6 +151,7 @@ config BR2_GCC_ENABLE_LIBMUDFLAP
 	# which mudflap is not supported.
 	depends on !BR2_ARM_INSTRUCTIONS_THUMB && !BR2_powerpc_SPE
 	depends on !BR2_GCC_VERSION_4_9_X
+	depends on !BR2_GCC_VERSION_5_X
 	help
 	  libmudflap is a gcc library used for the mudflap pointer
 	  debugging functionality. It is only needed if you intend to
