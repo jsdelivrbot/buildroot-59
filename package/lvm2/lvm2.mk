@@ -47,5 +47,12 @@ ifeq ($(BR2_arc),y)
 LVM2_CONF_ENV += ac_cv_flag_HAVE_PIE=no
 endif
 
+HOST_LVM2_CONF_OPTS += \
+	--disable-readline \
+	--with-confdir=$(HOST_DIR)/etc \
+	--with-default-system-dir=$(HOST_DIR)/etc/lvm
+
+HOST_LVM2_DEPENDENCIES =
+
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))
