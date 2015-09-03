@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LVM2_VERSION = 2.02.117
+LVM2_VERSION = 2.02.125
 LVM2_SOURCE = LVM2.$(LVM2_VERSION).tgz
 LVM2_SITE = ftp://sources.redhat.com/pub/lvm2/releases
 LVM2_INSTALL_STAGING = YES
@@ -43,7 +43,12 @@ else
 LVM2_CONF_OPTS += --disable-applib
 endif
 
+ifeq ($(BR2_arc),y)
+LVM2_CONF_ENV += ac_cv_flag_HAVE_PIE=no
+endif
+
 HOST_LVM2_CONF_OPTS += \
+	--disable-readline \
 	--with-confdir=$(HOST_DIR)/etc \
 	--with-default-system-dir=$(HOST_DIR)/etc/lvm
 
