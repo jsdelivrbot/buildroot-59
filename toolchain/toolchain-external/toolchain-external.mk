@@ -253,6 +253,37 @@ define TOOLCHAIN_EXTERNAL_LINARO_AARCH64_SYMLINK
 	ln -snf . $(TARGET_DIR)/usr/lib/aarch64-linux-gnu
 endef
 
+# The CodeSourcery MIPS 2015.05 toolchain has some missing headers we
+# need to create manually in order to avoid compilation errors. A bug
+# has been already reported and fixed upstream, and the fix will be
+# included in the next release.
+define TOOLCHAIN_EXTERNAL_CODESOURCERY_MIPS201505_LIB_NAMES_FIX
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard.h \
+		$(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_soft.h
+	$(SED) 's#hard#soft#' $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_soft.h
+
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard.h \
+		$(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard_2008.h
+	$(SED) 's#hard#hard_2008#' $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard_2008.h
+	$(SED) 's#ld.so.1#ld-linux-mipsn8.so.1#' $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard_2008.h
+	$(SED) '/LD_SO/i \
+		#define LD_LINUX_MIPSN8_SO              "ld-linux-mipsn8.so.1"' \
+		$(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard_2008.h
+
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_soft.h \
+		$(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-n64_soft.h
+	$(SED) 's#o32#n64#' $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-n64_soft.h
+
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_soft.h \
+		$(STAGING_DIR)/usr/include/gnu/
+
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-o32_hard_2008.h \
+		$(STAGING_DIR)/usr/include/gnu/
+
+	cp $(TOOLCHAIN_EXTERNAL_INSTALL_DIR)/mips-linux-gnu/libc/usr/include/gnu/lib-names-n64_soft.h \
+		$(STAGING_DIR)/usr/include/gnu/
+endef
+
 ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_ARM201305),y)
 TOOLCHAIN_EXTERNAL_SITE = http://sourcery.mentor.com/public/gnu_toolchain/arm-none-linux-gnueabi
 TOOLCHAIN_EXTERNAL_SOURCE = arm-2013.05-24-arm-none-linux-gnueabi-i686-pc-linux-gnu.tar.bz2
@@ -293,6 +324,7 @@ TOOLCHAIN_EXTERNAL_SOURCE = mips-2014.11-22-mips-linux-gnu-i686-pc-linux-gnu.tar
 else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_MIPS201505),y)
 TOOLCHAIN_EXTERNAL_SITE = http://sourcery.mentor.com/public/gnu_toolchain/mips-linux-gnu
 TOOLCHAIN_EXTERNAL_SOURCE = mips-2015.05-18-mips-linux-gnu-i686-pc-linux-gnu.tar.bz2
+TOOLCHAIN_EXTERNAL_POST_INSTALL_STAGING_HOOKS += TOOLCHAIN_EXTERNAL_CODESOURCERY_MIPS201505_LIB_NAMES_FIX
 else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_NIOSII201305),y)
 TOOLCHAIN_EXTERNAL_SITE = http://sourcery.mentor.com/public/gnu_toolchain/nios2-linux-gnu
 TOOLCHAIN_EXTERNAL_SOURCE = sourceryg++-2013.05-43-nios2-linux-gnu-i686-pc-linux-gnu.tar.bz2
@@ -318,12 +350,6 @@ TOOLCHAIN_EXTERNAL_SOURCE = renesas-2012.03-35-sh-linux-gnu-i686-pc-linux-gnu.ta
 else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_SH201209),y)
 TOOLCHAIN_EXTERNAL_SITE = https://sourcery.mentor.com/public/gnu_toolchain/sh-linux-gnu
 TOOLCHAIN_EXTERNAL_SOURCE = renesas-2012.09-61-sh-linux-gnu-i686-pc-linux-gnu.tar.bz2
-else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_SH2A_201009),y)
-TOOLCHAIN_EXTERNAL_SITE = http://sourcery.mentor.com/public/gnu_toolchain/sh-uclinux
-TOOLCHAIN_EXTERNAL_SOURCE = renesas-2010.09-60-sh-uclinux-i686-pc-linux-gnu.tar.bz2
-else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_SH2A_201103),y)
-TOOLCHAIN_EXTERNAL_SITE = http://sourcery.mentor.com/public/gnu_toolchain/sh-uclinux
-TOOLCHAIN_EXTERNAL_SOURCE = renesas-2011.03-36-sh-uclinux-i686-pc-linux-gnu.tar.bz2
 else ifeq ($(BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_X86_201109),y)
 TOOLCHAIN_EXTERNAL_SITE = https://sourcery.mentor.com/public/gnu_toolchain/i686-pc-linux-gnu
 TOOLCHAIN_EXTERNAL_SOURCE = ia32-2011.09-24-i686-pc-linux-gnu-i386-linux.tar.bz2
@@ -672,14 +698,16 @@ endif
 # Build toolchain wrapper for preprocessor, C and C++ compiler and setup
 # symlinks for everything else. Skip gdb symlink when we are building our
 # own gdb to prevent two gdb's in output/host/usr/bin.
-# When the link-time-optimization flag '-flto' is used, then the compiler
-# and binutils have to support lto. ar/ranlib need to be called with the
-# lto plugin. The wrappers *-gcc-ar and *-gcc-ranlib provided by GCC could
-# be used as drop-ins for ar/runlib when Makefiles are used which do not
-# pass the lto arguments.
+# The LTO support in gcc creates wrappers for ar, ranlib and nm which load
+# the lto plugin. These wrappers are called *-gcc-ar, *-gcc-ranlib, and
+# *-gcc-nm and should be used instead of the real programs when -flto is
+# used. However, we should not add the toolchain wrapper for them, and they
+# match the *cc-* pattern. Therefore, an additional case is added for *-ar,
+# *-ranlib and *-nm.
 define TOOLCHAIN_EXTERNAL_INSTALL_WRAPPER
 	$(Q)$(call MESSAGE,"Building ext-toolchain wrapper")
-	mkdir -p $(HOST_DIR)/usr/bin; cd $(HOST_DIR)/usr/bin; \
+	$(Q)mkdir -p $(HOST_DIR)/usr/bin
+	$(Q)cd $(HOST_DIR)/usr/bin; \
 	for i in $(TOOLCHAIN_EXTERNAL_CROSS)*; do \
 		base=$${i##*/}; \
 		case "$$base" in \
@@ -698,7 +726,7 @@ define TOOLCHAIN_EXTERNAL_INSTALL_WRAPPER
 			ln -sf $$(echo $$i | sed 's%^$(HOST_DIR)%../..%') .; \
 			;; \
 		esac; \
-	done ;
+	done
 	$(HOSTCC) $(HOST_CFLAGS) $(TOOLCHAIN_EXTERNAL_WRAPPER_ARGS) \
 		-s -Wl,--hash-style=$(TOOLCHAIN_EXTERNAL_WRAPPER_HASH_STYLE) \
 		toolchain/toolchain-external/ext-toolchain-wrapper.c \
@@ -707,7 +735,7 @@ endef
 
 # This sed magic is taken from Linux headers_install.sh script.
 define TOOLCHAIN_EXTERNAL_SANITIZE_KERNEL_HEADERS
-	$(Q)$(call MESSAGE,"Sanitizing kernel headers");
+	$(Q)$(call MESSAGE,"Sanitizing kernel headers")
 	find $(STAGING_DIR)/usr/include/linux/ -name "*.h" | xargs sed -r -i \
 		-e 's/([ \t(])(__user|__force|__iomem)[ \t]/\1/g' \
 		-e 's/__attribute_const__([ \t]|$$)/\1/g' \
@@ -717,9 +745,13 @@ define TOOLCHAIN_EXTERNAL_SANITIZE_KERNEL_HEADERS
 		-e 's@#(ifndef|define|endif[ \t]*/[*])[ \t]*_UAPI@#\1 @'
 endef
 
+#
+# Generate gdbinit file for use with Buildroot
+#
 define TOOLCHAIN_EXTERNAL_INSTALL_GDBINIT
-	if test -f $(TARGET_CROSS)gdb ; then \
-		$(call gen_gdbinit_file) ; \
+	$(Q)if test -f $(TARGET_CROSS)gdb ; then \
+		$(call MESSAGE,"Installing gdbinit"); \
+		$(gen_gdbinit_file); \
 	fi
 endef
 
@@ -729,10 +761,10 @@ endef
 # like with the original uClibc. Therefore, we create an additional
 # symbolic link to make uClibc-ng systems work properly.
 define TOOLCHAIN_EXTERNAL_FIXUP_UCLIBCNG_LDSO
-	if test -e $(TARGET_DIR)/lib/ld-uClibc.so.1; then \
+	$(Q)if test -e $(TARGET_DIR)/lib/ld-uClibc.so.1; then \
 		ln -sf ld-uClibc.so.1 $(TARGET_DIR)/lib/ld-uClibc.so.0 ; \
 	fi
-	if test -e $(TARGET_DIR)/lib/ld64-uClibc.so.1; then \
+	$(Q)if test -e $(TARGET_DIR)/lib/ld64-uClibc.so.1; then \
 		ln -sf ld64-uClibc.so.1 $(TARGET_DIR)/lib/ld64-uClibc.so.0 ; \
 	fi
 endef

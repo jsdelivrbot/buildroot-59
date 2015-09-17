@@ -1,2 +1,2 @@
-# From http://lists.freedesktop.org/archives/mesa-announce/2015-July/000165.html
-sha256	58592e07c350cd2e8969b73fa83048c657a39fe2f13f3b88f5e5818fe2e4676d	mesa-10.6.3.tar.xz
+# From http://cgit.freedesktop.org/mesa/mesa/commit/?id=ded289e3480a8e9421754d920d7ee5f174d9c5a5
+sha256 feb1f640b915dada88a7c793dfaff0ae23580f8903f87a6b76469253de0d28d8  mesa-10.6.7.tar.xz
