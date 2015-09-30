@@ -1,8 +1,8 @@
 ################################################################################
 #
-## libssh
+# libssh
 #
-#################################################################################
+################################################################################
 
 LIBSSH_VERSION = 0.7.1
 LIBSSH_SOURCE = libssh-$(LIBSSH_VERSION).tar.xz
@@ -12,9 +12,9 @@ LIBSSH_LICENSE_FILES = COPYING
 LIBSSH_INSTALL_STAGING = YES
 LIBSSH_SUPPORTS_IN_SOURCE_BUILD = NO
 LIBSSH_CONF_OPTS = \
-        -DWITH_STACK_PROTECTOR=OFF \
-        -DWITH_SERVER=OFF \
-        -DWITH_EXAMPLES=OFF
+	-DWITH_STACK_PROTECTOR=OFF \
+	-DWITH_SERVER=OFF \
+	-DWITH_EXAMPLES=OFF
 
 ifeq ($(BR2_PACKAGE_ZLIB),y)
 LIBSSH_CONF_OPTS += -DWITH_ZLIB=ON
