@@ -23,9 +23,10 @@ GCC_SOURCE ?= gcc-$(GCC_VERSION).tar.bz2
 # Xtensa special hook
 #
 
+HOST_GCC_XTENSA_OVERLAY_TAR = $(BR2_XTENSA_OVERLAY_DIR)/xtensa_$(call qstrip,$(BR2_XTENSA_CORE_NAME)).tar
+
 define HOST_GCC_XTENSA_OVERLAY_EXTRACT
-	tar xf $(BR2_XTENSA_OVERLAY_DIR)/xtensa_$(call qstrip,\
-		$(BR2_XTENSA_CORE_NAME)).tar -C $(@D) --strip-components=1 gcc
+	tar xf $(HOST_GCC_XTENSA_OVERLAY_TAR) -C $(@D) --strip-components=1 gcc
 endef
 
 #
@@ -112,11 +113,11 @@ GCC_COMMON_TARGET_CXXFLAGS = $(filter-out -Os,$(GCC_COMMON_TARGET_CXXFLAGS))
 endif
 endif
 
-# Xtensa libgcc can't be built with -mtext-section-literals
+# Xtensa libgcc can't be built with -mauto-litpools
 # because of the trick used to generate .init/.fini sections.
 ifeq ($(BR2_xtensa),y)
-GCC_COMMON_TARGET_CFLAGS = $(filter-out -mtext-section-literals,$(TARGET_CFLAGS))
-GCC_COMMON_TARGET_CXXFLAGS = $(filter-out -mtext-section-literals,$(TARGET_CXXFLAGS))
+GCC_COMMON_TARGET_CFLAGS = $(filter-out -mauto-litpools,$(TARGET_CFLAGS))
+GCC_COMMON_TARGET_CXXFLAGS = $(filter-out -mauto-litpools,$(TARGET_CXXFLAGS))
 endif
 
 # Propagate options used for target software building to GCC target libs
@@ -234,5 +235,67 @@ HOST_GCC_COMMON_CONF_OPTS += \
 	--enable-e500_double \
 	--with-long-double-128
 endif
+
+HOST_GCC_COMMON_TOOLCHAIN_WRAPPER_ARGS += -DBR_CROSS_PATH_SUFFIX='".real"'
+
+ifeq ($(BR2_CCACHE),y)
+HOST_GCC_COMMON_CCACHE_HASH_FILES += $(DL_DIR)/$(GCC_SOURCE)
+# Cfr. PATCH_BASE_DIRS in .stamp_patched, but we catch both versioned and
+# unversioned patches unconditionally
+HOST_GCC_COMMON_CCACHE_HASH_FILES += \
+	$(sort $(wildcard \
+		package/gcc/$(GCC_VERSION)/*.patch \
+		$(addsuffix $((PKG)_RAWNAME)/$(GCC_VERSION)/*.patch,$(call qstrip,$(BR2_GLOBAL_PATCH_DIR))) \
+		$(addsuffix $((PKG)_RAWNAME)/*.patch,$(call qstrip,$(BR2_GLOBAL_PATCH_DIR)))))
+ifeq ($(BR2_xtensa),y)
+HOST_GCC_COMMON_CCACHE_HASH_FILES += $(HOST_GCC_XTENSA_OVERLAY_TAR)
+endif
+ifeq ($(ARCH),powerpc)
+ifneq ($(BR2_SOFT_FLOAT),)
+HOST_GCC_COMMON_CCACHE_HASH_FILES += package/gcc/$(GCC_VERSION)/1000-powerpc-link-with-math-lib.patch.conditional
+endif
+endif
+
+# _CONF_OPTS contains some references to the absolute path of $(HOST_DIR)
+# and a reference to the Buildroot git revision (BR2_VERSION_FULL),
+# so substitute those away.
+HOST_GCC_COMMON_TOOLCHAIN_WRAPPER_ARGS += -DBR_CCACHE_HASH=\"`\
+	printf '%s\n' $(subst $(HOST_DIR),@HOST_DIR@,\
+		$(subst --with-pkgversion="Buildroot $(BR2_VERSION_FULL)",,$($(PKG)_CONF_OPTS))) \
+		| sha256sum - $(HOST_GCC_COMMON_CCACHE_HASH_FILES) \
+		| cut -c -64 | tr -d '\n'`\"
+endif # BR2_CCACHE
+
+# The LTO support in gcc creates wrappers for ar, ranlib and nm which load
+# the lto plugin. These wrappers are called *-gcc-ar, *-gcc-ranlib, and
+# *-gcc-nm and should be used instead of the real programs when -flto is
+# used. However, we should not add the toolchain wrapper for them, and they
+# match the *cc-* pattern. Therefore, an additional case is added for *-ar,
+# *-ranlib and *-nm.
+# Avoid that a .real is symlinked a second time.
+# Also create <arch>-linux-<tool> symlinks.
+define HOST_GCC_INSTALL_WRAPPER_AND_SIMPLE_SYMLINKS
+	$(Q)cd $(HOST_DIR)/usr/bin; \
+	for i in $(GNU_TARGET_NAME)-*; do \
+		case "$$i" in \
+		*.real) \
+			;; \
+		*-ar|*-ranlib|*-nm) \
+			ln -snf $$i $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \
+			;; \
+		*cc|*cc-*|*++|*++-*|*cpp) \
+			rm -f $$i.real; \
+			mv $$i $$i.real; \
+			ln -sf toolchain-wrapper $$i; \
+			ln -sf toolchain-wrapper $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \
+			ln -snf $$i.real $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}.real; \
+			;; \
+		*) \
+			ln -snf $$i $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \
+			;; \
+		esac; \
+	done
+
+endef
 
 include $(sort $(wildcard package/gcc/*/*.mk))
