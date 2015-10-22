@@ -142,7 +142,7 @@ endif
 
 # libsanitizer is broken for SPARC
 # https://bugs.busybox.net/show_bug.cgi?id=7951
-ifeq ($(BR2_sparc),y)
+ifeq ($(BR2_sparc)$(BR2_sparc64),y)
 HOST_GCC_COMMON_CONF_OPTS += --disable-libsanitizer
 endif
 
@@ -236,7 +236,17 @@ HOST_GCC_COMMON_CONF_OPTS += \
 	--with-long-double-128
 endif
 
-HOST_GCC_COMMON_TOOLCHAIN_WRAPPER_ARGS += -DBR_CROSS_PATH_SUFFIX='".real"'
+HOST_GCC_COMMON_TOOLCHAIN_WRAPPER_ARGS += -DBR_CROSS_PATH_SUFFIX='".br_real"'
+
+# For gcc-initial, we need to tell gcc that the C library will be
+# providing the ssp support, as it can't guess it since the C library
+# hasn't been built yet.
+#
+# For gcc-final, the gcc logic to detect whether SSP support is
+# available or not in the C library is not working properly for
+# uClibc, so let's be explicit as well.
+HOST_GCC_COMMON_MAKE_OPTS = \
+	gcc_cv_libc_provides_ssp=$(if $(BR2_TOOLCHAIN_HAS_SSP),yes,no)
 
 ifeq ($(BR2_CCACHE),y)
 HOST_GCC_COMMON_CCACHE_HASH_FILES += $(DL_DIR)/$(GCC_SOURCE)
@@ -272,23 +282,23 @@ endif # BR2_CCACHE
 # used. However, we should not add the toolchain wrapper for them, and they
 # match the *cc-* pattern. Therefore, an additional case is added for *-ar,
 # *-ranlib and *-nm.
-# Avoid that a .real is symlinked a second time.
+# Avoid that a .br_real is symlinked a second time.
 # Also create <arch>-linux-<tool> symlinks.
 define HOST_GCC_INSTALL_WRAPPER_AND_SIMPLE_SYMLINKS
 	$(Q)cd $(HOST_DIR)/usr/bin; \
 	for i in $(GNU_TARGET_NAME)-*; do \
 		case "$$i" in \
-		*.real) \
+		*.br_real) \
 			;; \
 		*-ar|*-ranlib|*-nm) \
 			ln -snf $$i $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \
 			;; \
 		*cc|*cc-*|*++|*++-*|*cpp) \
-			rm -f $$i.real; \
-			mv $$i $$i.real; \
+			rm -f $$i.br_real; \
+			mv $$i $$i.br_real; \
 			ln -sf toolchain-wrapper $$i; \
 			ln -sf toolchain-wrapper $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \
-			ln -snf $$i.real $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}.real; \
+			ln -snf $$i.br_real $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}.br_real; \
 			;; \
 		*) \
 			ln -snf $$i $(ARCH)-linux$${i##$(GNU_TARGET_NAME)}; \

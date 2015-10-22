@@ -183,7 +183,9 @@ endif
 ifneq ($(BR2_DL_DIR),)
 DL_DIR := $(BR2_DL_DIR)
 endif
-
+ifneq ($(BR2_CCACHE_DIR),)
+BR_CACHE_DIR := $(BR2_CCACHE_DIR)
+endif
 
 # Need that early, before we scan packages
 # Avoids doing the $(or...) everytime
@@ -371,7 +373,7 @@ TARGET_DIR_WARNING_FILE = $(TARGET_DIR)/THIS_IS_NOT_YOUR_ROOT_FILESYSTEM
 
 ifeq ($(BR2_CCACHE),y)
 CCACHE := $(HOST_DIR)/usr/bin/ccache
-BR_CACHE_DIR = $(call qstrip,$(BR2_CCACHE_DIR))
+BR_CACHE_DIR ?= $(call qstrip,$(BR2_CCACHE_DIR))
 export BR_CACHE_DIR
 HOSTCC := $(CCACHE) $(HOSTCC)
 HOSTCXX := $(CCACHE) $(HOSTCXX)
@@ -686,6 +688,13 @@ graph-depends: graph-depends-requirements
 	|tee $(GRAPHS_DIR)/$(@).dot \
 	|dot $(BR2_GRAPH_DOT_OPTS) -T$(BR_GRAPH_OUT) -o $(GRAPHS_DIR)/$(@).$(BR_GRAPH_OUT)
 
+graph-size:
+	$(Q)mkdir -p $(GRAPHS_DIR)
+	$(Q)$(TOPDIR)/support/scripts/size-stats --builddir $(BASE_DIR) \
+		--graph $(GRAPHS_DIR)/graph-size.$(BR_GRAPH_OUT) \
+		--file-size-csv $(GRAPHS_DIR)/file-size-stats.csv \
+		--package-size-csv $(GRAPHS_DIR)/package-size-stats.csv
+
 else # ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 
 all: menuconfig
@@ -903,6 +912,7 @@ endif
 	@echo '  manual-epub            - build manual in ePub'
 	@echo '  graph-build            - generate graphs of the build times'
 	@echo '  graph-depends          - generate graph of the dependency tree'
+	@echo '  graph-size             - generate stats of the filesystem size'
 	@echo '  list-defconfigs        - list all defconfigs (pre-configured minimal systems)'
 	@echo
 	@echo 'Miscellaneous:'

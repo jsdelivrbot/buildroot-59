@@ -63,6 +63,9 @@ static char *predef_args[] = {
 #ifdef BR_64
 	"-m64",
 #endif
+#ifdef BR_OMIT_LOCK_PREFIX
+	"-Wa,-momit-lock-prefix=yes",
+#endif
 #ifdef BR_BINFMT_FLAT
 	"-Wl,-elf2flt",
 #endif
@@ -143,10 +146,10 @@ int main(int argc, char **argv)
 
 	/* Fill in the relative paths */
 #ifdef BR_CROSS_PATH_REL
-	ret = snprintf(path, sizeof(path), "%s/" BR_CROSS_PATH_REL "/%s", absbasedir, basename);
+	ret = snprintf(path, sizeof(path), "%s/" BR_CROSS_PATH_REL "/%s" BR_CROSS_PATH_SUFFIX, absbasedir, basename);
 #elif defined(BR_CROSS_PATH_ABS)
-	ret = snprintf(path, sizeof(path), BR_CROSS_PATH_ABS "/%s", basename);
-#else /* BR_CROSS_PATH_SUFFIX */
+	ret = snprintf(path, sizeof(path), BR_CROSS_PATH_ABS "/%s" BR_CROSS_PATH_SUFFIX, basename);
+#else
 	ret = snprintf(path, sizeof(path), "%s/usr/bin/%s" BR_CROSS_PATH_SUFFIX, absbasedir, basename);
 #endif
 	if (ret >= sizeof(path)) {
