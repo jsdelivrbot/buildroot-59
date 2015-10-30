@@ -978,6 +978,7 @@ menu "Multimedia"
 	source "package/live555/Config.in"
 	source "package/mediastreamer/Config.in"
 	source "package/x264/Config.in"
+	source "package/x265/Config.in"
 endmenu
 
 menu "Networking"
@@ -1457,6 +1458,7 @@ comment "Utilities"
 	source "package/logrotate/Config.in"
 	source "package/logsurfer/Config.in"
 	source "package/pinentry/Config.in"
+	source "package/ranger/Config.in"
 	source "package/screen/Config.in"
 	source "package/sudo/Config.in"
 if BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
