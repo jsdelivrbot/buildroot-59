@@ -117,9 +117,10 @@ endif
 # https://github.com/pld-linux/mplayer/blob/master/mplayer-libcdio.patch
 MPLAYER_CONF_OPTS += --disable-libcdio
 
+# We intentionally don't pass --enable-dvdread, to let the
+# autodetection find which library to link with.
 ifeq ($(BR2_PACKAGE_LIBDVDREAD),y)
 MPLAYER_CONF_OPTS +=  \
-	--enable-dvdread \
 	--with-dvdread-config=$(STAGING_DIR)/usr/bin/dvdread-config
 MPLAYER_DEPENDENCIES += libdvdread
 endif
@@ -175,9 +176,10 @@ MPLAYER_DEPENDENCIES += tremor
 MPLAYER_CONF_OPTS += --enable-tremor
 endif
 
+# We intentionally don't pass --enable-libvorbis, to let the
+# autodetection find which library to link with.
 ifeq ($(BR2_PACKAGE_LIBVORBIS),y)
 MPLAYER_DEPENDENCIES += libvorbis
-MPLAYER_CONF_OPTS += --enable-libvorbis
 endif
 
 ifeq ($(BR2_PACKAGE_LIBMAD),y)
@@ -259,6 +261,13 @@ ifeq ($(BR2_i386),y)
 MPLAYER_CFLAGS += -fomit-frame-pointer
 endif
 
+ifeq ($(BR2_X86_CPU_HAS_MMX),y)
+MPLAYER_CONF_OPTS += --yasm=$(HOST_DIR)/usr/bin/yasm
+MPLAYER_DEPENDENCIES += host-yasm
+else
+MPLAYER_CONF_OPTS += --yasm=''
+endif
+
 define MPLAYER_CONFIGURE_CMDS
 	(cd $(@D); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -273,7 +282,6 @@ define MPLAYER_CONFIGURE_CMDS
 		--charset=UTF-8 \
 		--extra-cflags="$(MPLAYER_CFLAGS)" \
 		--extra-ldflags="$(MPLAYER_LDFLAGS)" \
-		--yasm='' \
 		--enable-fbdev \
 		$(MPLAYER_CONF_OPTS) \
 		--enable-cross-compile \
