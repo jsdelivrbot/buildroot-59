@@ -55,13 +55,13 @@ copy_toolchain_lib_root = \
 		$${ARCH_SYSROOT_DIR}/$${ARCH_LIB_DIR} \
 		$${ARCH_SYSROOT_DIR}/usr/$${ARCH_LIB_DIR} \
 		$${SUPPORT_LIB_DIR} ; do \
-		LIBSPATH=`find $${dir} -maxdepth 1 -name "$${LIB}" 2>/dev/null` ; \
-		if test -n "$${LIBSPATH}" ; then \
+		LIBPATHS=`find $${dir} -maxdepth 1 -name "$${LIB}" 2>/dev/null` ; \
+		if test -n "$${LIBPATHS}" ; then \
 			break ; \
 		fi \
 	done ; \
 	mkdir -p $(TARGET_DIR)/$${DESTDIR}; \
-	for LIBPATH in $${LIBSPATH} ; do \
+	for LIBPATH in $${LIBPATHS} ; do \
 		while true ; do \
 			LIBNAME=`basename $${LIBPATH}`; \
 			LIBDIR=`dirname $${LIBPATH}` ; \
@@ -154,7 +154,7 @@ copy_toolchain_sysroot = \
 	for i in etc $${ARCH_LIB_DIR} sbin usr usr/$${ARCH_LIB_DIR}; do \
 		if [ -d $${ARCH_SYSROOT_DIR}/$$i ] ; then \
 			rsync -au --chmod=u=rwX,go=rX --exclude 'usr/lib/locale' \
-				--exclude lib --exclude lib32 --exclude lib64 \
+				--include '/libexec*/' --exclude '/lib*/' \
 				$${ARCH_SYSROOT_DIR}/$$i/ $(STAGING_DIR)/$$i/ ; \
 		fi ; \
 	done ; \
